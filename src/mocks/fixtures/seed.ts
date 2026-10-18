@@ -449,7 +449,7 @@ export const buildSeed = (): DbState => ({
   usersAuth: { ...USERS_AUTH },
   sessions: {},
   nfts: buildNfts(),
-  carts: {},
+  cartsByKey: {},
   orders: {},
   favoritesByUser: {},
   walletsByUser: {},

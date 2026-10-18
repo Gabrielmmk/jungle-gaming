@@ -4,6 +4,7 @@ import { HTTP_BY_CODE, type ApiError, type ApiErrorCode } from '@/contracts/erro
 import { registerSchema, loginSchema } from '@/contracts/auth'
 import { profileUpdateSchema, passwordChangeSchema, avatarSchema } from '@/contracts/profile'
 import { walletInputSchema } from '@/contracts/wallet'
+import { addToCartSchema, updateCartItemSchema, quoteRequestSchema } from '@/contracts/cart'
 import { ZodError, type ZodType } from 'zod'
 import { db } from '@/mocks/db/instance'
 import { apiError, type DbError } from '@/mocks/db/createDb'
@@ -21,6 +22,17 @@ const bearer = (request: StrictRequest<DefaultBodyType>): string | null => {
 
 const currentUser = (request: StrictRequest<DefaultBodyType>): string | null =>
   db.resolveUserId(bearer(request))
+
+/**
+ * Chave do carrinho: userId quando há sessão, senão o guestId enviado no
+ * header `X-Guest-Id` (o visitante gera e persiste um id no cliente). Assim o
+ * carrinho sobrevive a refresh antes do login e pode ser mesclado ao logar.
+ */
+const cartKey = (request: StrictRequest<DefaultBodyType>): string => {
+  const userId = currentUser(request)
+  if (userId) return userId
+  return request.headers.get('X-Guest-Id') ?? 'guest-anon'
+}
 
 const hasCode = (error: unknown): error is DbError =>
   typeof error === 'object' && error !== null && 'code' in error
@@ -286,5 +298,56 @@ export const handlers = [
     } catch (error) {
       return dbErrorResponse(error)
     }
+  }),
+
+  // --- Carrinho --------------------------------------------------------
+
+  http.get('*/api/cart', async ({ request }) => {
+    await applyLatency(getScenario())
+    return HttpResponse.json(db.getCart(cartKey(request)))
+  }),
+
+  http.post('*/api/cart', async ({ request }) => {
+    await applyLatency(getScenario())
+    try {
+      const { nftId, qty } = await parseBody(request, addToCartSchema)
+      return HttpResponse.json(db.addToCart(cartKey(request), nftId, qty))
+    } catch (error) {
+      return dbErrorResponse(error)
+    }
+  }),
+
+  http.patch('*/api/cart/:nftId', async ({ request, params }) => {
+    await applyLatency(getScenario())
+    try {
+      const { qty } = await parseBody(request, updateCartItemSchema)
+      return HttpResponse.json(db.updateCartItem(cartKey(request), params.nftId as string, qty))
+    } catch (error) {
+      return dbErrorResponse(error)
+    }
+  }),
+
+  http.delete('*/api/cart/:nftId', async ({ request, params }) => {
+    await applyLatency(getScenario())
+    return HttpResponse.json(db.removeCartItem(cartKey(request), params.nftId as string))
+  }),
+
+  http.post('*/api/cart/quote', async ({ request }) => {
+    await applyLatency(getScenario())
+    try {
+      const { coupon } = await parseBody(request, quoteRequestSchema)
+      return HttpResponse.json(db.quoteCart(cartKey(request), coupon))
+    } catch (error) {
+      return dbErrorResponse(error)
+    }
+  }),
+
+  http.post('*/api/cart/merge', async ({ request }) => {
+    await applyLatency(getScenario())
+    const userId = currentUser(request)
+    if (!userId) return errorResponse('unauthorized', 'Sessão necessária para mesclar carrinho')
+    const guestId = request.headers.get('X-Guest-Id')
+    if (guestId) db.mergeCart(guestId, userId)
+    return HttpResponse.json(db.getCart(userId))
   }),
 ]

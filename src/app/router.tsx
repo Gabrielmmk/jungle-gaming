@@ -7,6 +7,8 @@ import { Route as loginRoute } from '@/routes/login'
 import { Route as registerRoute } from '@/routes/register'
 import { Route as profileRoute } from '@/routes/profile'
 import { Route as walletsRoute } from '@/routes/wallets'
+import { Route as cartRoute } from '@/routes/cart'
+import { Route as checkoutRoute } from '@/routes/checkout'
 
 /**
  * Roteamento code-based (sem geração por arquivo). A árvore inclui as
@@ -21,6 +23,8 @@ const routeTree = rootRoute.addChildren([
   registerRoute,
   profileRoute,
   walletsRoute,
+  cartRoute,
+  checkoutRoute,
 ])
 
 export const router = createRouter({ routeTree, context: { queryClient } })

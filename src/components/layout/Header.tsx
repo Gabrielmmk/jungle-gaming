@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { ShoppingCart, UserRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/features/auth/useSession'
+import { useCartCount } from '@/features/cart/useCartCount'
 
 interface HeaderProps {
   /**
@@ -37,6 +38,7 @@ function ComingSoonLink({ label }: { label: string }) {
 
 export function Header({ search }: HeaderProps) {
   const { isAuthenticated, user } = useSession()
+  const cartCount = useCartCount()
   return (
     <header className="border-b border-border bg-ink">
       <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-4 md:flex-row md:items-center md:justify-between">
@@ -70,19 +72,21 @@ export function Header({ search }: HeaderProps) {
         {search && <div className="w-full md:max-w-md md:flex-1">{search}</div>}
 
         <div className="flex items-center justify-end gap-4">
-          <button
-            type="button"
-            aria-label="Carrinho, 0 itens"
+          <Link
+            to="/cart"
+            aria-label={`Carrinho, ${cartCount} ${cartCount === 1 ? 'item' : 'itens'}`}
             className="relative rounded-md p-2 text-text-primary hover:bg-surface-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <ShoppingCart aria-hidden="true" className="size-5" />
-            <span
-              aria-hidden="true"
-              className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium leading-none text-ink"
-            >
-              0
-            </span>
-          </button>
+            {cartCount > 0 && (
+              <span
+                aria-hidden="true"
+                className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium leading-none text-ink"
+              >
+                {cartCount}
+              </span>
+            )}
+          </Link>
 
           {isAuthenticated ? (
             <Link

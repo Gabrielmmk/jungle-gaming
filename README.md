@@ -5,9 +5,12 @@ simulados (REST + tempo real) na camada de rede. Estética **GreenMint** (dark/e
 tipografia monoespaçada), fiel ao Figma.
 
 > **Status:** Concluídas as camadas de Fundação & Mock Backend, Descoberta
-> (Início + Detalhes) e Sessão & Conta (login/cadastro/perfil/carteiras/favoritos).
-> Pendentes: Carrinho, Checkout, Testes E2E, Performance/Deploy — entregues
-> incrementalmente. Veja `ARCHITECTURE.md` para a visão de arquitetura.
+> (Início + Detalhes), Sessão & Conta (login/cadastro/perfil/carteiras/favoritos) e
+> Carrinho (itens/cupom/cotação). Pendentes: Checkout, Testes E2E, Performance/Deploy
+> — entregues incrementalmente. Veja `ARCHITECTURE.md` para a visão de arquitetura.
+
+**Cupons de teste (carrinho):** `LAUNCH10` (-10%) e `WELCOME5` (-5%) válidos;
+`EXPIRED` (expirado) e qualquer outro código são rejeitados com mensagem.
 
 ## Stack
 

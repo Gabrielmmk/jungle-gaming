@@ -263,6 +263,32 @@ implícito, nunca só cor), que se limpa sozinho após alguns segundos.
   fonte/ícone/paleta foi necessária além do que já estava documentado na
   Camada 0.
 
+## Carrinho e cotação (Camada 3)
+
+- **Estado do carrinho:** linhas `{ nftId, qty }` por **chave** = `userId` (logado)
+  ou `guestId` (visitante). O cliente gera/persiste um `guestId` (`greenmint:guest`,
+  `src/features/cart/guestStore.ts`) enviado em todo request como header
+  `X-Guest-Id`; o servidor usa o `userId` da sessão quando existe e ignora o guest.
+  Assim o carrinho **sobrevive a refresh** antes do login.
+- **Merge ao autenticar:** no login/cadastro, `POST /cart/merge` mescla o carrinho do
+  visitante no do usuário (somando quantidades, respeitando disponibilidade) e o
+  `guestId` é descartado — preserva os itens do visitante ao autenticar.
+- **Cotação (fonte da verdade dos valores):** `POST /cart/quote` retorna
+  `{ items, subtotalEth, discountEth, networkFeeEth, totalEth, coupon }`, tudo em ETH
+  como **string decimal** (big.js no db). A quantidade efetiva é limitada pela
+  disponibilidade atual (edição esgotada durante a compra reduz a linha). Taxa de rede
+  fixa (`0.016 ETH`) quando há itens.
+- **Cupons:** `LAUNCH10` (-10%), `WELCOME5` (-5%) válidos; `EXPIRED` expirado;
+  qualquer outro código → inválido. A cotação sinaliza `coupon.applied=false` com
+  `reason: 'invalid' | 'expired'` (não é erro HTTP — a UI mostra a mensagem).
+- **Disponibilidade por edição:** `addToCart`/`updateCartItem` fazem _clamp_ da
+  quantidade ao `available` do NFT; `available === 0` → 409 (esgotada).
+- **Tempo real:** ao receber `nft.updated` (preço/disponibilidade), `useNftEvents`
+  invalida `['quote']` → o resumo do carrinho recalcula a partir do novo estado do
+  catálogo enquanto o carrinho está aberto.
+- **Checkout:** rota `/checkout` já é **privada** (`requireAuth`) — acessar sem sessão
+  cai no login preservando o destino; a tela de pagamento é a Camada 4.
+
 ## Decisões e pins de ambiente
 
 - **MSW v2** (não v3): o `@mswjs/socket.io-binding` só suporta o range de peer da v2.

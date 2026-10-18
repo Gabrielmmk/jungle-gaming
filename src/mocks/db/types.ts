@@ -1,22 +1,13 @@
 import type { Nft } from '@/contracts/nft'
 import type { User } from '@/contracts/auth'
 import type { Wallet } from '@/contracts/wallet'
+import type { CartLine } from '@/contracts/cart'
 
-export type { User, Wallet }
+export type { User, Wallet, CartLine }
 
 /** Credenciais do usuário (senha hasheada — nunca em claro). */
 export interface UserAuth {
   passwordHash: string
-}
-
-export interface CartItem {
-  nftId: string
-  qty: number
-}
-
-export interface Cart {
-  userId: string
-  items: CartItem[]
 }
 
 export interface OrderItem {
@@ -43,7 +34,8 @@ export interface DbState {
   usersAuth: Record<string, UserAuth>
   sessions: Record<string, string>
   nfts: Nft[]
-  carts: Record<string, Cart>
+  /** Carrinho por chave = userId (logado) ou guestId (visitante). */
+  cartsByKey: Record<string, CartLine[]>
   orders: Record<string, Order[]>
   favoritesByUser: Record<string, string[]>
   walletsByUser: Record<string, Wallet[]>

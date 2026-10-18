@@ -13,6 +13,7 @@ import { useNft } from '@/features/nft-detail/useNft'
 import { NftGallery } from '@/features/nft-detail/NftGallery'
 import { EditionQuantity } from '@/features/nft-detail/EditionQuantity'
 import { FavoriteButton } from '@/features/nft-detail/FavoriteButton'
+import { useCart } from '@/features/cart/useCart'
 import { RelatedCollection } from '@/features/nft-detail/RelatedCollection'
 import { useNftEvents } from '@/features/realtime/useNftEvents'
 import { formatEth } from '@/shared/eth/money'
@@ -33,6 +34,7 @@ export const Route = createRoute({
 function NftDetailPage() {
   const { id } = Route.useParams()
   const { nft, isLoading, isError, notFound, refetch } = useNft(id)
+  const { add: addToCart } = useCart()
   const [quantity, setQuantity] = useState(1)
   const [buyFeedback, setBuyFeedback] = useState(false)
   const [updatedMessage, setUpdatedMessage] = useState<string | null>(null)
@@ -169,10 +171,15 @@ function NftDetailPage() {
               <Button
                 type="button"
                 variant="default"
-                disabled={soldOut}
-                onClick={() => setBuyFeedback(true)}
+                disabled={soldOut || addToCart.isPending}
+                onClick={() =>
+                  addToCart.mutate(
+                    { nftId: nft.id, qty: quantity },
+                    { onSuccess: () => setBuyFeedback(true) },
+                  )
+                }
               >
-                Comprar
+                {addToCart.isPending ? 'Adicionando…' : 'Comprar'}
               </Button>
               <FavoriteButton id={nft.id} />
               <Button type="button" variant="ghost" size="icon" aria-label="Compartilhar">
@@ -180,14 +187,12 @@ function NftDetailPage() {
               </Button>
             </div>
 
-            {/*
-              Carrinho é escopo da Camada 3 — em vez de simular um
-              "adicionado ao carrinho" (sucesso fictício), avisamos
-              honestamente que a funcionalidade ainda não existe.
-            */}
             {buyFeedback && (
-              <p role="status" className="text-body text-text-secondary">
-                Carrinho de compras em breve. Essa ação ainda não está disponível.
+              <p role="status" className="flex items-center gap-2 text-body text-text-accent">
+                Adicionado ao carrinho.{' '}
+                <Link to="/cart" className="underline">
+                  Ver carrinho
+                </Link>
               </p>
             )}
           </div>

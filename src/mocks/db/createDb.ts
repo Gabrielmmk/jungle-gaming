@@ -12,6 +12,7 @@ import type { User, RegisterInput, LoginInput, AuthResponse } from '@/contracts/
 import type { ProfileUpdateInput } from '@/contracts/profile'
 import { AVATAR_MAX_BYTES } from '@/contracts/profile'
 import type { Wallet, WalletInput } from '@/contracts/wallet'
+import type { CartLine, Quote, CouponStatus } from '@/contracts/cart'
 import { buildSeed } from '@/mocks/fixtures/seed'
 import { hashPassword } from '@/mocks/db/hash'
 import { saveState } from '@/mocks/persistence/indexeddb'
@@ -38,6 +39,13 @@ export interface MockDb {
   listWallets: (userId: string | null) => Wallet[]
   addWallet: (userId: string | null, input: WalletInput) => Wallet
   updateWallet: (userId: string | null, walletId: string, input: WalletInput) => Wallet
+  // Carrinho (chave = userId logado ou guestId visitante)
+  getCart: (key: string) => CartLine[]
+  addToCart: (key: string, nftId: string, qty: number) => CartLine[]
+  updateCartItem: (key: string, nftId: string, qty: number) => CartLine[]
+  removeCartItem: (key: string, nftId: string) => CartLine[]
+  mergeCart: (fromKey: string, toKey: string) => void
+  quoteCart: (key: string, coupon?: string) => Quote
   persist: () => Promise<void>
   resetScenario: () => Promise<void>
   /** Substitui o estado em memória por um estado previamente persistido (ex.: IndexedDB). */
@@ -327,6 +335,114 @@ export const createDb = (initialState?: DbState): MockDb => {
     return updated
   }
 
+  // --- Carrinho / cotação ----------------------------------------------
+
+  /** Cupons simulados. `LAUNCH10`/`WELCOME5` válidos; `EXPIRED` expirado. */
+  const COUPONS: Record<string, { percentOff: number; expired?: boolean }> = {
+    LAUNCH10: { percentOff: 10 },
+    WELCOME5: { percentOff: 5 },
+    EXPIRED: { percentOff: 20, expired: true },
+  }
+  const NETWORK_FEE_ETH = '0.016'
+
+  const getCart = (key: string): CartLine[] => state.cartsByKey[key] ?? []
+
+  const setCart = (key: string, lines: CartLine[]): CartLine[] => {
+    state = { ...state, cartsByKey: { ...state.cartsByKey, [key]: lines } }
+    return lines
+  }
+
+  /** Quantidade máxima comprável de um NFT (disponibilidade da edição). */
+  const maxQtyFor = (nftId: string): number => getNft(nftId)?.available ?? 0
+
+  const addToCart = (key: string, nftId: string, qty: number): CartLine[] => {
+    const nft = getNft(nftId)
+    if (!nft) throw apiError('not_found', 'NFT não encontrado')
+    const max = nft.available
+    if (max <= 0) throw apiError('conflict', 'Edição esgotada')
+    const current = getCart(key)
+    const existing = current.find((l) => l.nftId === nftId)
+    const nextQty = Math.min((existing?.qty ?? 0) + qty, max)
+    const lines = existing
+      ? current.map((l) => (l.nftId === nftId ? { ...l, qty: nextQty } : l))
+      : [...current, { nftId, qty: Math.min(qty, max) }]
+    return setCart(key, lines)
+  }
+
+  const updateCartItem = (key: string, nftId: string, qty: number): CartLine[] => {
+    const max = maxQtyFor(nftId)
+    if (max <= 0) throw apiError('conflict', 'Edição esgotada')
+    const clamped = Math.max(1, Math.min(qty, max))
+    const lines = getCart(key).map((l) => (l.nftId === nftId ? { ...l, qty: clamped } : l))
+    return setCart(key, lines)
+  }
+
+  const removeCartItem = (key: string, nftId: string): CartLine[] =>
+    setCart(
+      key,
+      getCart(key).filter((l) => l.nftId !== nftId),
+    )
+
+  /** Mescla o carrinho de `fromKey` em `toKey` (visitante → autenticado). */
+  const mergeCart = (fromKey: string, toKey: string): void => {
+    const from = getCart(fromKey)
+    if (from.length === 0) return
+    const to = getCart(toKey)
+    const merged = [...to]
+    for (const line of from) {
+      const existing = merged.find((l) => l.nftId === line.nftId)
+      const max = maxQtyFor(line.nftId)
+      if (existing) {
+        existing.qty = Math.min(existing.qty + line.qty, max)
+      } else if (max > 0) {
+        merged.push({ nftId: line.nftId, qty: Math.min(line.qty, max) })
+      }
+    }
+    const { [fromKey]: _dropped, ...restCarts } = state.cartsByKey
+    void _dropped
+    state = { ...state, cartsByKey: { ...restCarts, [toKey]: merged } }
+  }
+
+  const resolveCoupon = (code?: string): CouponStatus | null => {
+    if (!code) return null
+    const normalized = code.trim().toUpperCase()
+    const found = COUPONS[normalized]
+    if (!found) return { code: normalized, applied: false, reason: 'invalid' }
+    if (found.expired) return { code: normalized, applied: false, reason: 'expired' }
+    return { code: normalized, applied: true, percentOff: found.percentOff }
+  }
+
+  const quoteCart = (key: string, coupon?: string): Quote => {
+    const lines = getCart(key)
+    const items = lines.flatMap((line) => {
+      const nft = getNft(line.nftId)
+      if (!nft) return []
+      // Disponibilidade pode ter mudado (edição esgotada durante a compra):
+      // a cotação reflete o estado atual, limitando a quantidade efetiva.
+      const qty = Math.min(line.qty, nft.available)
+      const lineTotalEth = new Big(nft.priceEth).times(qty).toString()
+      return [{ nft, qty, lineTotalEth }]
+    })
+
+    const subtotal = items.reduce((acc, it) => acc.plus(it.lineTotalEth), new Big(0))
+    const couponStatus = resolveCoupon(coupon)
+    const discount =
+      couponStatus?.applied && couponStatus.percentOff
+        ? subtotal.times(couponStatus.percentOff).div(100)
+        : new Big(0)
+    const networkFee = items.length > 0 ? new Big(NETWORK_FEE_ETH) : new Big(0)
+    const total = subtotal.minus(discount).plus(networkFee)
+
+    return {
+      items,
+      subtotalEth: subtotal.toString(),
+      discountEth: discount.toString(),
+      networkFeeEth: networkFee.toString(),
+      totalEth: total.toString(),
+      coupon: couponStatus,
+    }
+  }
+
   const bumpNftVersion = (id: string, patch: Partial<Nft>): Nft => {
     const index = state.nfts.findIndex((nft) => nft.id === id)
     if (index === -1) {
@@ -372,6 +488,12 @@ export const createDb = (initialState?: DbState): MockDb => {
     listWallets,
     addWallet,
     updateWallet,
+    getCart,
+    addToCart,
+    updateCartItem,
+    removeCartItem,
+    mergeCart,
+    quoteCart,
     persist,
     resetScenario,
     hydrate,

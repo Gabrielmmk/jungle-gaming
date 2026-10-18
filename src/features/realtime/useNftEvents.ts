@@ -136,6 +136,9 @@ export function useNftEvents(options: UseNftEventsOptions = {}): void {
       }
 
       if (applied) {
+        // Preço/disponibilidade mudaram → a cotação do carrinho (se aberta)
+        // precisa ser recalculada a partir do novo estado do catálogo.
+        queryClient.invalidateQueries({ queryKey: ['quote'] })
         onAppliedRef.current?.(applied)
       }
     }

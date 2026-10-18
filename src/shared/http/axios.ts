@@ -1,5 +1,6 @@
 import axios, { AxiosError } from 'axios'
 import { tokenStore } from '@/features/auth/tokenStore'
+import { guestStore } from '@/features/cart/guestStore'
 
 /**
  * Resolve a baseURL da API de forma segura tanto no browser (Vite) quanto
@@ -26,6 +27,13 @@ api.interceptors.request.use((config) => {
   const token = tokenStore.get()
   if (token) {
     config.headers.set('Authorization', `Bearer ${token}`)
+  }
+  // Identidade de visitante para o carrinho (guest) — sempre enviada; o
+  // servidor usa userId quando há sessão e ignora o guest nesse caso.
+  try {
+    config.headers.set('X-Guest-Id', guestStore.get())
+  } catch {
+    /* sem window (SSR/teste) */
   }
   return config
 })
