@@ -1,6 +1,7 @@
 import { createRouter } from '@tanstack/react-router'
 import { Route as rootRoute } from '@/routes/__root'
 import { Route as indexRoute } from '@/routes/index'
+import { Route as nftDetailRoute } from '@/routes/nft.$id'
 
 /**
  * Roteamento code-based (sem geração de rotas por arquivo) — ver nota no
@@ -9,7 +10,7 @@ import { Route as indexRoute } from '@/routes/index'
  * `Route` via `createRootRoute`/`createFileRoute`; aqui apenas montamos a
  * árvore e criamos o router.
  */
-const routeTree = rootRoute.addChildren([indexRoute])
+const routeTree = rootRoute.addChildren([indexRoute, nftDetailRoute])
 
 export const router = createRouter({ routeTree })
 
