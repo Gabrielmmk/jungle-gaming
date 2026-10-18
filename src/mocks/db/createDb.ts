@@ -13,10 +13,11 @@ import type { ProfileUpdateInput } from '@/contracts/profile'
 import { AVATAR_MAX_BYTES } from '@/contracts/profile'
 import type { Wallet, WalletInput } from '@/contracts/wallet'
 import type { CartLine, Quote, CouponStatus } from '@/contracts/cart'
+import type { Order, OrderStatus, CreateOrderInput } from '@/contracts/order'
 import { buildSeed } from '@/mocks/fixtures/seed'
 import { hashPassword } from '@/mocks/db/hash'
 import { saveState } from '@/mocks/persistence/indexeddb'
-import type { DbState } from '@/mocks/db/types'
+import type { DbState, StoredOrder } from '@/mocks/db/types'
 
 export interface MockDb {
   listNfts: (params: ListNftsParams) => ListNftsResponse
@@ -46,6 +47,10 @@ export interface MockDb {
   removeCartItem: (key: string, nftId: string) => CartLine[]
   mergeCart: (fromKey: string, toKey: string) => void
   quoteCart: (key: string, coupon?: string) => Quote
+  // Pedidos (idempotentes; estado pendente → confirmado/recusado)
+  createOrder: (userId: string | null, idempotencyKey: string, input: CreateOrderInput) => Order
+  getOrder: (userId: string | null, orderId: string) => Order
+  transitionOrder: (orderId: string, status: OrderStatus) => StoredOrder
   persist: () => Promise<void>
   resetScenario: () => Promise<void>
   /** Substitui o estado em memória por um estado previamente persistido (ex.: IndexedDB). */
@@ -443,6 +448,116 @@ export const createDb = (initialState?: DbState): MockDb => {
     }
   }
 
+  // --- Pedidos ---------------------------------------------------------
+
+  const orderSig = (input: CreateOrderInput): string =>
+    JSON.stringify({
+      collector: input.collector,
+      wallet: input.walletLabel,
+      network: input.network,
+      coupon: input.coupon ?? null,
+      total: input.expectedTotalEth,
+    })
+
+  const randomHex = (len: number): string => {
+    let out = ''
+    for (let i = 0; i < len; i++) out += Math.floor(Math.random() * 16).toString(16)
+    return out
+  }
+
+  const createOrder = (
+    userId: string | null,
+    idempotencyKey: string,
+    input: CreateOrderInput,
+  ): Order => {
+    const uid = requireSessionUser(userId).id
+    const sig = orderSig(input)
+
+    // Idempotência: mesma chave + mesmo conteúdo recupera o mesmo pedido;
+    // mesma chave + conteúdo diferente é conflito.
+    const existingId = state.idempotencyKeys[idempotencyKey]
+    if (existingId) {
+      const stored = state.ordersById[existingId]
+      if (stored && stored.sig === sig) return stored.order
+      throw apiError('conflict', 'Chave de idempotência reutilizada com conteúdo diferente')
+    }
+
+    // Revalidação: a cotação atual (pós eventos de preço/disponibilidade) é
+    // a referência. Se o total divergir do revisado pelo usuário, recusa —
+    // o checkout exige nova confirmação.
+    const quote = quoteCart(uid, input.coupon)
+    if (quote.items.length === 0) throw apiError('conflict', 'Carrinho vazio')
+    if (quote.totalEth !== input.expectedTotalEth) {
+      throw apiError('conflict', 'Cotação desatualizada — revise os valores')
+    }
+
+    const order: Order = {
+      id: `order-${randomHex(8)}`,
+      status: 'pending',
+      txHash: `0x${randomHex(40)}`,
+      createdAt: new Date().toISOString(),
+      collector: input.collector,
+      walletLabel: input.walletLabel,
+      network: input.network,
+      items: quote.items.map((it) => ({
+        nftId: it.nft.id,
+        name: it.nft.name,
+        image: it.nft.image,
+        collection: it.nft.collection,
+        qty: it.qty,
+        priceEth: it.nft.priceEth,
+        lineTotalEth: it.lineTotalEth,
+      })),
+      subtotalEth: quote.subtotalEth,
+      discountEth: quote.discountEth,
+      networkFeeEth: quote.networkFeeEth,
+      totalEth: quote.totalEth,
+      coupon: quote.coupon,
+    }
+
+    // Decrementa disponibilidade do catálogo (reserva a edição comprada) e
+    // esvazia o carrinho do usuário (remove os itens comprados).
+    const purchased = new Map(order.items.map((it) => [it.nftId, it.qty]))
+    const nfts = state.nfts.map((nft) => {
+      const qty = purchased.get(nft.id)
+      return qty
+        ? { ...nft, available: Math.max(0, nft.available - qty), version: nft.version + 1 }
+        : nft
+    })
+
+    const stored: StoredOrder = { order, userId: uid, version: 1, sig }
+    state = {
+      ...state,
+      nfts,
+      ordersById: { ...state.ordersById, [order.id]: stored },
+      idempotencyKeys: { ...state.idempotencyKeys, [idempotencyKey]: order.id },
+      cartsByKey: { ...state.cartsByKey, [uid]: [] },
+    }
+    return order
+  }
+
+  const getOrder = (userId: string | null, orderId: string): Order => {
+    const uid = requireSessionUser(userId).id
+    const stored = state.ordersById[orderId]
+    if (!stored) throw apiError('not_found', 'Pedido não encontrado')
+    if (stored.userId !== uid) throw apiError('forbidden', 'Pedido de outro usuário')
+    return stored.order
+  }
+
+  /** Transita um pedido para confirmado/recusado. Pedidos terminais não mudam. */
+  const transitionOrder = (orderId: string, status: OrderStatus): StoredOrder => {
+    const stored = state.ordersById[orderId]
+    if (!stored) throw apiError('not_found', 'Pedido não encontrado')
+    if (stored.order.status !== 'pending') return stored // terminal: idempotente
+    const next: StoredOrder = {
+      ...stored,
+      order: { ...stored.order, status },
+      version: stored.version + 1,
+    }
+    state = { ...state, ordersById: { ...state.ordersById, [orderId]: next } }
+    return next
+  }
+
   const bumpNftVersion = (id: string, patch: Partial<Nft>): Nft => {
     const index = state.nfts.findIndex((nft) => nft.id === id)
     if (index === -1) {
@@ -494,6 +609,9 @@ export const createDb = (initialState?: DbState): MockDb => {
     removeCartItem,
     mergeCart,
     quoteCart,
+    createOrder,
+    getOrder,
+    transitionOrder,
     persist,
     resetScenario,
     hydrate,

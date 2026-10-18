@@ -2,26 +2,23 @@ import type { Nft } from '@/contracts/nft'
 import type { User } from '@/contracts/auth'
 import type { Wallet } from '@/contracts/wallet'
 import type { CartLine } from '@/contracts/cart'
+import type { Order } from '@/contracts/order'
 
-export type { User, Wallet, CartLine }
+export type { User, Wallet, CartLine, Order }
 
 /** Credenciais do usuário (senha hasheada — nunca em claro). */
 export interface UserAuth {
   passwordHash: string
 }
 
-export interface OrderItem {
-  nftId: string
-  qty: number
-  priceEth: string
-}
-
-export interface Order {
-  id: string
+/** Pedido armazenado + metadados internos (dono + versão para order.updated). */
+export interface StoredOrder {
+  order: Order
   userId: string
-  items: OrderItem[]
-  totalEth: string
-  createdAt: string
+  version: number
+  /** Assinatura do conteúdo: reusar a chave de idempotência com conteúdo
+   * diferente gera conflito; igual recupera o mesmo pedido. */
+  sig: string
 }
 
 /**
@@ -36,7 +33,10 @@ export interface DbState {
   nfts: Nft[]
   /** Carrinho por chave = userId (logado) ou guestId (visitante). */
   cartsByKey: Record<string, CartLine[]>
-  orders: Record<string, Order[]>
+  /** Pedidos indexados por id (snapshot + dono + versão). */
+  ordersById: Record<string, StoredOrder>
+  /** Chave de idempotência → orderId (mesma tentativa recupera o mesmo pedido). */
+  idempotencyKeys: Record<string, string>
   favoritesByUser: Record<string, string[]>
   walletsByUser: Record<string, Wallet[]>
 }

@@ -2,7 +2,7 @@ import type { Nft } from '@/contracts/nft'
 import type { DbState, User, UserAuth } from '@/mocks/db/types'
 import { hashPassword } from '@/mocks/db/hash'
 
-export const SCHEMA_VERSION = 3
+export const SCHEMA_VERSION = 4
 
 /** Credenciais fictícias dos usuários semeados (documentadas no README). */
 export const SEED_CREDENTIALS = [
@@ -450,7 +450,8 @@ export const buildSeed = (): DbState => ({
   sessions: {},
   nfts: buildNfts(),
   cartsByKey: {},
-  orders: {},
+  ordersById: {},
+  idempotencyKeys: {},
   favoritesByUser: {},
   walletsByUser: {},
 })

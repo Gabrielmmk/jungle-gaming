@@ -289,6 +289,36 @@ implícito, nunca só cor), que se limpa sozinho após alguns segundos.
 - **Checkout:** rota `/checkout` já é **privada** (`requireAuth`) — acessar sem sessão
   cai no login preservando o destino; a tela de pagamento é a Camada 4.
 
+## Checkout, pedidos e confirmação (Camada 4)
+
+- **Pedido idempotente:** `POST /api/orders` exige o header **`Idempotency-Key`**. A
+  mesma chave + mesmo conteúdo recupera o **mesmo** pedido; mesma chave + conteúdo
+  diferente → **409 conflito**. O cliente (`useCheckout`) gera uma chave estável por
+  tentativa e a **reutiliza no retry** de timeout — sem criar compra duplicada.
+- **Revalidação antes de confirmar:** a cotação atual (pós eventos de preço/
+  disponibilidade) é a referência. O pedido envia `expectedTotalEth` (o total
+  revisado); se divergir, o servidor recusa (409 "cotação desatualizada") e a tela
+  **exige nova confirmação** (revalida e gera nova chave de idempotência).
+- **Estados do pedido:** criado como `pending`; transita assíncronamente para
+  `confirmed` (ou `refused` no cenário `payment-refused`), emitindo **`order.updated`**
+  apenas para o usuário dono (roteamento por usuário no emitter). A tela de
+  confirmação (`/order/$id`) escuta o evento e também faz `GET /orders/:id` —
+  **recuperável após refresh/reconexão**; pedidos confirmados/recusados são terminais.
+- **Prevenção de duplicatas:** botão desabilitado enquanto pendente + idempotência.
+- **Timeout + recuperação:** cenário `order-timeout` — o pedido é criado na primeira
+  tentativa mas a resposta demora além do timeout do cliente; o retry com a mesma
+  chave recupera o pedido (sem duplicar). O delay/agendamento só ocorrem na primeira
+  tentativa (a recuperação idempotente responde rápido).
+- **Recibo como snapshot:** os itens do pedido são congelados no momento da compra
+  (nome/imagem/preço/subtotal); alterações posteriores no catálogo **não** mudam o
+  recibo. Referência de transação (`txHash`) e link de explorador são **simulados**.
+- **Pós-compra:** a disponibilidade das edições compradas é decrementada e o carrinho
+  do usuário é esvaziado (remove os itens comprados).
+- **Carteira e rede:** seleção de carteira cadastrada ou provedor (MetaMask/Coinbase)
+  com **simulação de conexão/recusa/desconexão** (cenário `wallet-refused` recusa a
+  conexão). Social/provedores reais estão fora de escopo.
+- **Cenários novos:** `payment-refused`, `order-timeout`, `wallet-refused`.
+
 ## Decisões e pins de ambiente
 
 - **MSW v2** (não v3): o `@mswjs/socket.io-binding` só suporta o range de peer da v2.

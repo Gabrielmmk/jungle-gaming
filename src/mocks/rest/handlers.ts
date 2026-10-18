@@ -5,10 +5,15 @@ import { registerSchema, loginSchema } from '@/contracts/auth'
 import { profileUpdateSchema, passwordChangeSchema, avatarSchema } from '@/contracts/profile'
 import { walletInputSchema } from '@/contracts/wallet'
 import { addToCartSchema, updateCartItemSchema, quoteRequestSchema } from '@/contracts/cart'
+import { createOrderSchema } from '@/contracts/order'
 import { ZodError, type ZodType } from 'zod'
 import { db } from '@/mocks/db/instance'
 import { apiError, type DbError } from '@/mocks/db/createDb'
+import { emitOrderUpdated } from '@/mocks/socket/emitter'
 import { applyLatency, getScenario, maybeFault } from '@/mocks/scenarios/scenarios'
+
+/** Delay (ms) antes do pedido transitar de pendente → confirmado/recusado. */
+const ORDER_SETTLE_MS = 900
 
 /**
  * Resolve o usuário atual pelo header Authorization: Bearer <token>,
@@ -349,5 +354,62 @@ export const handlers = [
     const guestId = request.headers.get('X-Guest-Id')
     if (guestId) db.mergeCart(guestId, userId)
     return HttpResponse.json(db.getCart(userId))
+  }),
+
+  // --- Pedidos ---------------------------------------------------------
+
+  http.post('*/api/orders', async ({ request }) => {
+    const scenario = getScenario()
+    await applyLatency(scenario)
+    const userId = currentUser(request)
+    try {
+      const idempotencyKey = request.headers.get('Idempotency-Key') ?? ''
+      if (!idempotencyKey) return errorResponse('validation', 'Idempotency-Key ausente')
+      const input = await parseBody(request, createOrderSchema)
+
+      // Primeira tentativa desta chave? (A recuperação idempotente não deve
+      // reagendar a transição nem reaplicar o delay de timeout.)
+      const firstAttempt = !db.__debugState().idempotencyKeys[idempotencyKey]
+      const order = db.createOrder(userId, idempotencyKey, input)
+
+      // Transição assíncrona: pendente → confirmado (ou recusado no cenário
+      // `payment-refused`), emitindo order.updated APENAS para o usuário dono.
+      if (firstAttempt && order.status === 'pending' && userId) {
+        setTimeout(() => {
+          const next = scenario === 'payment-refused' ? 'refused' : 'confirmed'
+          const stored = db.transitionOrder(order.id, next)
+          emitOrderUpdated(
+            {
+              id: `evt-${order.id}-${stored.version}`,
+              resource: `order:${order.id}`,
+              version: stored.version,
+              payload: { id: order.id, status: next },
+            },
+            userId,
+          )
+        }, ORDER_SETTLE_MS)
+      }
+
+      // Cenário de timeout: na PRIMEIRA tentativa o pedido é criado, mas a
+      // resposta demora além do timeout do cliente — o retry com a MESMA
+      // chave recupera o pedido (idempotência) e responde rápido, sem criar
+      // outra compra.
+      if (scenario === 'order-timeout' && firstAttempt) {
+        await new Promise((resolve) => setTimeout(resolve, 4000))
+      }
+
+      return HttpResponse.json(order)
+    } catch (error) {
+      return dbErrorResponse(error)
+    }
+  }),
+
+  http.get('*/api/orders/:id', async ({ request, params }) => {
+    await applyLatency(getScenario())
+    try {
+      return HttpResponse.json(db.getOrder(currentUser(request), params.id as string))
+    } catch (error) {
+      return dbErrorResponse(error)
+    }
   }),
 ]

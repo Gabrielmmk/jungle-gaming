@@ -4,10 +4,11 @@ Marketplace de NFTs (desafio frontend) em React + TypeScript, com dados totalmen
 simulados (REST + tempo real) na camada de rede. Estética **GreenMint** (dark/earthy,
 tipografia monoespaçada), fiel ao Figma.
 
-> **Status:** Concluídas as camadas de Fundação & Mock Backend, Descoberta
-> (Início + Detalhes), Sessão & Conta (login/cadastro/perfil/carteiras/favoritos) e
-> Carrinho (itens/cupom/cotação). Pendentes: Checkout, Testes E2E, Performance/Deploy
-> — entregues incrementalmente. Veja `ARCHITECTURE.md` para a visão de arquitetura.
+> **Status:** Concluídos os fluxos de Fundação & Mock Backend, Descoberta
+> (Início + Detalhes), Sessão & Conta, Carrinho e **Checkout/Confirmação** (pedido
+> idempotente, revalidação, estados pendente/confirmado/recusado, recibo snapshot).
+> Pendentes: Testes E2E (Playwright), Performance (Lighthouse) e Deploy — além do
+> passe de fidelidade visual. Veja `ARCHITECTURE.md` para a arquitetura.
 
 **Cupons de teste (carrinho):** `LAUNCH10` (-10%) e `WELCOME5` (-5%) válidos;
 `EXPIRED` (expirado) e qualquer outro código são rejeitados com mensagem.
@@ -79,9 +80,14 @@ sobreviver a refresh.
 Cenários disponíveis: `happy` (padrão, sem latência/erro), `slow`, `variable`
 (latência variável), `transient` (503), `unauthorized` (401), `offline`,
 `session-expired` (sessão expira → 401 em rotas privadas), `register-conflict`
-(cadastro retorna 409), `validation-error`. Mais cenários determinísticos (cupom
-inválido, edição esgotada, timeout de pedido, etc.) são adicionados nas camadas
-seguintes.
+(cadastro retorna 409), `validation-error`, `payment-refused` (pedido recusado),
+`order-timeout` (timeout na criação do pedido, recuperado por idempotência) e
+`wallet-refused` (conexão de carteira recusada no checkout).
+
+Para reproduzir o fluxo "preço muda durante o checkout": com o checkout aberto,
+dispare no console `window.__greenmint.emitNftUpdated({...})` alterando o preço de um
+NFT do carrinho — ao confirmar, o servidor recusa com "cotação desatualizada" e a tela
+exige nova confirmação.
 
 **Reset do cenário** (restaura integralmente o seed conhecido): no console do
 navegador, com mocks ativos:
