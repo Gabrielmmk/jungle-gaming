@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { io, type Socket } from 'socket.io-client'
+import { io } from 'socket.io-client'
 import type { EventEnvelope } from '@/contracts/events'
 import { EVENTS } from '@/contracts/events'
 import type { ListNftsResponse, Nft } from '@/contracts/nft'
@@ -35,13 +35,11 @@ const isNftUpdatedEnvelope = (
  */
 export function useNftEvents(): void {
   const queryClient = useQueryClient()
-  const socketRef = useRef<Socket | null>(null)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
 
     const socket = io(SOCKET_URL, { transports: ['websocket'] })
-    socketRef.current = socket
 
     const applyUpdate = (envelope: EventEnvelope<unknown>): void => {
       if (!isNftUpdatedEnvelope(envelope)) return
@@ -73,7 +71,6 @@ export function useNftEvents(): void {
     return () => {
       socket.off(EVENTS.nftUpdated, applyUpdate)
       socket.close()
-      socketRef.current = null
     }
   }, [queryClient])
 }
