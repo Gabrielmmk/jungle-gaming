@@ -1,3 +1,4 @@
+import { useNavigate, useSearch } from '@tanstack/react-router'
 import { z } from 'zod'
 
 /**
@@ -54,4 +55,25 @@ export function nextSearch(current: NftSearch, patch: Partial<NftSearch>): NftSe
   }
 
   return merged
+}
+
+/**
+ * Hook de conveniência que liga o estado de busca puro (acima) à URL da
+ * rota `/`, via TanStack Router. `search` é a busca validada atual;
+ * `setSearch(patch)` aplica `nextSearch` e navega, substituindo os search
+ * params (o Router cuida da serialização, inclusive de arrays).
+ */
+export function useNftSearch(): {
+  search: NftSearch
+  setSearch: (patch: Partial<NftSearch>) => void
+} {
+  const search = useSearch({ from: '/' })
+  const navigate = useNavigate({ from: '/' })
+
+  const setSearch = (patch: Partial<NftSearch>): void => {
+    const next = nextSearch(search, patch)
+    void navigate({ search: next })
+  }
+
+  return { search, setSearch }
 }
