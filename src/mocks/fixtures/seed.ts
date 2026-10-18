@@ -1,12 +1,35 @@
 import type { Nft } from '@/contracts/nft'
-import type { DbState, User } from '@/mocks/db/types'
+import type { DbState, User, UserAuth } from '@/mocks/db/types'
+import { hashPassword } from '@/mocks/db/hash'
 
-export const SCHEMA_VERSION = 2
+export const SCHEMA_VERSION = 3
+
+/** Credenciais fictícias dos usuários semeados (documentadas no README). */
+export const SEED_CREDENTIALS = [
+  { id: 'user-1', email: 'ana.silva@greenmint.test', password: 'senha1234' },
+  { id: 'user-2', email: 'bruno.costa@greenmint.test', password: 'senha1234' },
+] as const
 
 const USERS: User[] = [
-  { id: 'user-1', email: 'ana.silva@greenmint.test', name: 'Ana Silva' },
-  { id: 'user-2', email: 'bruno.costa@greenmint.test', name: 'Bruno Costa' },
+  {
+    id: 'user-1',
+    email: 'ana.silva@greenmint.test',
+    username: 'ana.silva',
+    displayName: 'Ana Silva',
+    walletNickname: 'Ana Wallet',
+  },
+  {
+    id: 'user-2',
+    email: 'bruno.costa@greenmint.test',
+    username: 'bruno.costa',
+    displayName: 'Bruno Costa',
+    walletNickname: 'Bruno Wallet',
+  },
 ]
+
+const USERS_AUTH: Record<string, UserAuth> = Object.fromEntries(
+  SEED_CREDENTIALS.map((c) => [c.id, { passwordHash: hashPassword(c.password) }]),
+)
 
 const CATEGORIES = [
   'Digital Art',
@@ -423,11 +446,11 @@ const buildNfts = (): Nft[] =>
 export const buildSeed = (): DbState => ({
   schemaVersion: SCHEMA_VERSION,
   users: USERS.map((u) => ({ ...u })),
+  usersAuth: { ...USERS_AUTH },
+  sessions: {},
   nfts: buildNfts(),
-  favorites: [],
   carts: {},
   orders: {},
-  profiles: {},
-  wallets: {},
   favoritesByUser: {},
+  walletsByUser: {},
 })

@@ -1,15 +1,12 @@
 import type { Nft } from '@/contracts/nft'
+import type { User } from '@/contracts/auth'
+import type { Wallet } from '@/contracts/wallet'
 
-export interface User {
-  id: string
-  email: string
-  name: string
-}
+export type { User, Wallet }
 
-export interface Favorite {
-  userId: string
-  nftId: string
-  addedAt: string
+/** Credenciais do usuário (senha hasheada — nunca em claro). */
+export interface UserAuth {
+  passwordHash: string
 }
 
 export interface CartItem {
@@ -36,30 +33,18 @@ export interface Order {
   createdAt: string
 }
 
-export interface Profile {
-  userId: string
-  displayName: string
-  avatar?: string
-}
-
-export interface Wallet {
-  userId: string
-  balanceEth: string
-}
-
 /**
  * Estado global do "backend" mockado: catálogo compartilhado + estruturas
- * por usuário. As estruturas por usuário ficam tipadas, porém minimamente
- * populadas por agora — chunks futuros preenchem o comportamento completo.
+ * por usuário (favoritos/carteiras/perfil/pedidos) + sessões e credenciais.
  */
 export interface DbState {
   schemaVersion: number
   users: User[]
+  usersAuth: Record<string, UserAuth>
+  sessions: Record<string, string>
   nfts: Nft[]
-  favorites: Favorite[]
   carts: Record<string, Cart>
   orders: Record<string, Order[]>
-  profiles: Record<string, Profile>
-  wallets: Record<string, Wallet>
   favoritesByUser: Record<string, string[]>
+  walletsByUser: Record<string, Wallet[]>
 }

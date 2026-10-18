@@ -8,7 +8,12 @@ import {
   type Nft,
 } from '@/contracts/nft'
 import type { ApiErrorCode } from '@/contracts/errors'
+import type { User, RegisterInput, LoginInput, AuthResponse } from '@/contracts/auth'
+import type { ProfileUpdateInput } from '@/contracts/profile'
+import { AVATAR_MAX_BYTES } from '@/contracts/profile'
+import type { Wallet, WalletInput } from '@/contracts/wallet'
 import { buildSeed } from '@/mocks/fixtures/seed'
+import { hashPassword } from '@/mocks/db/hash'
 import { saveState } from '@/mocks/persistence/indexeddb'
 import type { DbState } from '@/mocks/db/types'
 
@@ -19,10 +24,26 @@ export interface MockDb {
   listFavorites: (userId: string | null) => string[]
   addFavorite: (userId: string | null, nftId: string) => void
   removeFavorite: (userId: string | null, nftId: string) => void
+  // Auth / sessão
+  register: (input: RegisterInput) => AuthResponse
+  login: (input: LoginInput) => AuthResponse
+  getSession: (token: string | null) => User | undefined
+  resolveUserId: (token: string | null) => string | null
+  logout: (token: string | null) => void
+  // Conta
+  getProfile: (userId: string | null) => User
+  updateProfile: (userId: string | null, patch: ProfileUpdateInput) => User
+  changePassword: (userId: string | null, currentPassword: string, newPassword: string) => void
+  setAvatar: (userId: string | null, avatarUrl: string | null) => User
+  listWallets: (userId: string | null) => Wallet[]
+  addWallet: (userId: string | null, input: WalletInput) => Wallet
+  updateWallet: (userId: string | null, walletId: string, input: WalletInput) => Wallet
   persist: () => Promise<void>
   resetScenario: () => Promise<void>
   /** Substitui o estado em memória por um estado previamente persistido (ex.: IndexedDB). */
   hydrate: (nextState: DbState) => void
+  /** Apenas para testes: inspeção do estado interno. */
+  __debugState: () => DbState
 }
 
 /**
@@ -152,6 +173,160 @@ export const createDb = (initialState?: DbState): MockDb => {
     }
   }
 
+  // --- Auth / sessão ---------------------------------------------------
+
+  const newToken = (): string =>
+    globalThis.crypto?.randomUUID?.() ?? `tok_${Math.random().toString(36).slice(2)}${Date.now()}`
+
+  const findUserById = (userId: string): User | undefined =>
+    state.users.find((u) => u.id === userId)
+
+  const requireSessionUser = (userId: string | null): User => {
+    if (userId == null) throw apiError('unauthorized', 'unauthorized: sessão necessária')
+    const user = findUserById(userId)
+    if (!user) throw apiError('unauthorized', 'unauthorized: usuário inexistente')
+    return user
+  }
+
+  const register = (input: RegisterInput): AuthResponse => {
+    const email = input.email.toLowerCase()
+    if (state.users.some((u) => u.email.toLowerCase() === email)) {
+      throw apiError('conflict', 'E-mail já cadastrado')
+    }
+    if (state.users.some((u) => u.username.toLowerCase() === input.username.toLowerCase())) {
+      throw apiError('conflict', 'Nome de usuário já em uso')
+    }
+    const user: User = {
+      id: `user-${state.users.length + 1}-${newToken().slice(0, 8)}`,
+      email: input.email,
+      username: input.username,
+      displayName: input.displayName,
+    }
+    const token = newToken()
+    state = {
+      ...state,
+      users: [...state.users, user],
+      usersAuth: { ...state.usersAuth, [user.id]: { passwordHash: hashPassword(input.password) } },
+      sessions: { ...state.sessions, [token]: user.id },
+      favoritesByUser: { ...state.favoritesByUser, [user.id]: [] },
+      walletsByUser: { ...state.walletsByUser, [user.id]: [] },
+    }
+    return { token, user }
+  }
+
+  const login = (input: LoginInput): AuthResponse => {
+    const user = state.users.find((u) => u.email.toLowerCase() === input.email.toLowerCase())
+    const auth = user ? state.usersAuth[user.id] : undefined
+    if (!user || !auth || auth.passwordHash !== hashPassword(input.password)) {
+      throw apiError('unauthorized', 'E-mail ou senha inválidos')
+    }
+    const token = newToken()
+    state = { ...state, sessions: { ...state.sessions, [token]: user.id } }
+    return { token, user }
+  }
+
+  const resolveUserId = (token: string | null): string | null =>
+    token ? (state.sessions[token] ?? null) : null
+
+  const getSession = (token: string | null): User | undefined => {
+    const userId = resolveUserId(token)
+    return userId ? findUserById(userId) : undefined
+  }
+
+  const logout = (token: string | null): void => {
+    if (!token) return
+    const { [token]: _removed, ...rest } = state.sessions
+    void _removed
+    state = { ...state, sessions: rest }
+  }
+
+  // --- Conta -----------------------------------------------------------
+
+  const getProfile = (userId: string | null): User => requireSessionUser(userId)
+
+  const updateProfile = (userId: string | null, patch: ProfileUpdateInput): User => {
+    const user = requireSessionUser(userId)
+    const emailTaken = state.users.some(
+      (u) => u.id !== user.id && u.email.toLowerCase() === patch.email.toLowerCase(),
+    )
+    if (emailTaken) throw apiError('conflict', 'E-mail já cadastrado')
+    const usernameTaken = state.users.some(
+      (u) => u.id !== user.id && u.username.toLowerCase() === patch.username.toLowerCase(),
+    )
+    if (usernameTaken) throw apiError('conflict', 'Nome de usuário já em uso')
+    const updated: User = { ...user, ...patch }
+    state = { ...state, users: state.users.map((u) => (u.id === user.id ? updated : u)) }
+    return updated
+  }
+
+  const changePassword = (
+    userId: string | null,
+    currentPassword: string,
+    newPassword: string,
+  ): void => {
+    const user = requireSessionUser(userId)
+    const auth = state.usersAuth[user.id]
+    if (!auth || auth.passwordHash !== hashPassword(currentPassword)) {
+      throw apiError('validation', 'Senha atual incorreta')
+    }
+    if (newPassword.length < 8) {
+      throw apiError('validation', 'A nova senha deve ter ao menos 8 caracteres')
+    }
+    state = {
+      ...state,
+      usersAuth: { ...state.usersAuth, [user.id]: { passwordHash: hashPassword(newPassword) } },
+    }
+  }
+
+  const setAvatar = (userId: string | null, avatarUrl: string | null): User => {
+    const user = requireSessionUser(userId)
+    if (avatarUrl && avatarUrl.length > AVATAR_MAX_BYTES) {
+      throw apiError('validation', 'Imagem muito grande (máx. 256 KB)')
+    }
+    const updated: User = { ...user, avatarUrl: avatarUrl ?? undefined }
+    state = { ...state, users: state.users.map((u) => (u.id === user.id ? updated : u)) }
+    return updated
+  }
+
+  const listWallets = (userId: string | null): Wallet[] => {
+    const user = requireSessionUser(userId)
+    return state.walletsByUser[user.id] ?? []
+  }
+
+  const addWallet = (userId: string | null, input: WalletInput): Wallet => {
+    const user = requireSessionUser(userId)
+    const current = state.walletsByUser[user.id] ?? []
+    if (current.some((w) => w.address.toLowerCase() === input.address.toLowerCase())) {
+      throw apiError('conflict', 'Carteira com este endereço já cadastrada')
+    }
+    const wallet: Wallet = { id: `wallet-${newToken().slice(0, 8)}`, ...input }
+    state = {
+      ...state,
+      walletsByUser: { ...state.walletsByUser, [user.id]: [...current, wallet] },
+    }
+    return wallet
+  }
+
+  const updateWallet = (userId: string | null, walletId: string, input: WalletInput): Wallet => {
+    const user = requireSessionUser(userId)
+    const current = state.walletsByUser[user.id] ?? []
+    const index = current.findIndex((w) => w.id === walletId)
+    if (index === -1) throw apiError('not_found', 'Carteira não encontrada')
+    const duplicate = current.some(
+      (w) => w.id !== walletId && w.address.toLowerCase() === input.address.toLowerCase(),
+    )
+    if (duplicate) throw apiError('conflict', 'Carteira com este endereço já cadastrada')
+    const updated: Wallet = { ...current[index], ...input }
+    state = {
+      ...state,
+      walletsByUser: {
+        ...state.walletsByUser,
+        [user.id]: current.map((w, i) => (i === index ? updated : w)),
+      },
+    }
+    return updated
+  }
+
   const bumpNftVersion = (id: string, patch: Partial<Nft>): Nft => {
     const index = state.nfts.findIndex((nft) => nft.id === id)
     if (index === -1) {
@@ -185,8 +360,21 @@ export const createDb = (initialState?: DbState): MockDb => {
     listFavorites,
     addFavorite,
     removeFavorite,
+    register,
+    login,
+    getSession,
+    resolveUserId,
+    logout,
+    getProfile,
+    updateProfile,
+    changePassword,
+    setAvatar,
+    listWallets,
+    addWallet,
+    updateWallet,
     persist,
     resetScenario,
     hydrate,
+    __debugState: () => state,
   }
 }
