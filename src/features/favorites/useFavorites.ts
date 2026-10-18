@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { isAxiosError } from 'axios'
 import { api } from '@/shared/http/axios'
+import { useSession } from '@/features/auth/useSession'
 
 interface UseFavoritesResult {
   favorites: string[]
@@ -9,64 +9,60 @@ interface UseFavoritesResult {
   isLoading: boolean
   isFavorite: (id: string) => boolean
   toggleFavorite: (id: string) => void
-  /**
-   * `true` enquanto o prompt de login (favoritar sem sessão) deve ser
-   * exibido. A página decide a UI (ex.: um dialog), este hook só expõe o
-   * estado e `dismissLoginPrompt` para fechá-lo.
-   */
   showLoginPrompt: boolean
   dismissLoginPrompt: () => void
 }
 
 /**
- * Favoritos desta camada: ainda não existe sessão de usuário (ver
- * `GET /api/favorites` → 401 sempre, nesta fase). Em vez de tratar o 401
- * como um erro fatal, ele é interpretado como "não autenticado" —
- * `isAuthenticated: false` e `favorites: []`.
+ * Favoritos do usuário autenticado. Sem sessão, `toggleFavorite` não chama
+ * a API — apenas liga `showLoginPrompt` (a página decide o dialog/redirect).
  *
- * Com `isAuthenticated: false`, `toggleFavorite` NUNCA chama a API de
- * favoritos: apenas liga `showLoginPrompt`, para a página oferecer um
- * caminho de login (dialog) sem fingir que a ação foi aplicada. Essa
- * decisão evita fazer uma chamada que sabemos que vai 401 e evita navegar
- * para `/login` (rota que ainda não existe nesta camada).
+ * Com sessão, o toggle é **otimista**: atualiza o cache de `['favorites']`
+ * imediatamente, faz **rollback** ao estado anterior em caso de erro e
+ * invalida ao concluir — satisfazendo o requisito de atualização otimista
+ * com rollback (§4 do enunciado).
  */
 export function useFavorites(): UseFavoritesResult {
   const queryClient = useQueryClient()
+  const { isAuthenticated } = useSession()
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
 
   const query = useQuery({
     queryKey: ['favorites'],
     queryFn: () => api.get('/favorites').then((r) => r.data as string[]),
+    enabled: isAuthenticated,
     retry: false,
   })
 
-  const isAuthenticated = !(isAxiosError(query.error) && query.error.response?.status === 401)
-
   const favorites = isAuthenticated ? (query.data ?? []) : []
-
-  const addMutation = useMutation({
-    mutationFn: (id: string) => api.post(`/favorites/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['favorites'] }),
-  })
-
-  const removeMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`/favorites/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['favorites'] }),
-  })
-
   const isFavorite = (id: string) => favorites.includes(id)
+
+  const toggle = useMutation({
+    mutationFn: async ({ id, next }: { id: string; next: boolean }) => {
+      if (next) await api.post(`/favorites/${id}`)
+      else await api.delete(`/favorites/${id}`)
+    },
+    onMutate: async ({ id, next }) => {
+      await queryClient.cancelQueries({ queryKey: ['favorites'] })
+      const previous = queryClient.getQueryData<string[]>(['favorites']) ?? []
+      const optimistic = next ? [...previous, id] : previous.filter((f) => f !== id)
+      queryClient.setQueryData(['favorites'], optimistic)
+      return { previous }
+    },
+    onError: (_err, _vars, context) => {
+      if (context) queryClient.setQueryData(['favorites'], context.previous)
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['favorites'] })
+    },
+  })
 
   const toggleFavorite = (id: string) => {
     if (!isAuthenticated) {
       setShowLoginPrompt(true)
       return
     }
-
-    if (isFavorite(id)) {
-      removeMutation.mutate(id)
-    } else {
-      addMutation.mutate(id)
-    }
+    toggle.mutate({ id, next: !isFavorite(id) })
   }
 
   return {

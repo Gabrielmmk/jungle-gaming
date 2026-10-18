@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
-import { ShoppingCart } from 'lucide-react'
+import { ShoppingCart, UserRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useSession } from '@/features/auth/useSession'
 
 interface HeaderProps {
   /**
@@ -35,6 +36,7 @@ function ComingSoonLink({ label }: { label: string }) {
 }
 
 export function Header({ search }: HeaderProps) {
+  const { isAuthenticated, user } = useSession()
   return (
     <header className="border-b border-border bg-ink">
       <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-4 md:flex-row md:items-center md:justify-between">
@@ -82,16 +84,20 @@ export function Header({ search }: HeaderProps) {
             </span>
           </button>
 
-          {/*
-            `/login` ainda não existe como rota (chega em uma camada
-            futura de autenticação). Usamos uma âncora comum em vez do
-            `Link` tipado do router — navegar para lá cai no 404 global
-            (ver `routes/__root.tsx`), o que é aceitável nesta camada e
-            não finge uma funcionalidade que não existe.
-          */}
-          <Button asChild variant="default" size="sm">
-            <a href="/login">Entrar</a>
-          </Button>
+          {isAuthenticated ? (
+            <Link
+              to="/profile"
+              className="flex items-center gap-2 rounded-md px-3 py-1.5 text-body text-text-primary hover:bg-surface-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              activeProps={{ className: 'text-text-accent' }}
+            >
+              <UserRound aria-hidden="true" className="size-4" />
+              <span className="max-w-[10ch] truncate">{user?.displayName ?? 'Minha conta'}</span>
+            </Link>
+          ) : (
+            <Button asChild variant="default" size="sm">
+              <Link to="/login">Entrar</Link>
+            </Button>
+          )}
         </div>
       </div>
     </header>

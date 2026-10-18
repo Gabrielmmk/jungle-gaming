@@ -1,21 +1,46 @@
-import { Link, Outlet } from '@tanstack/react-router'
-import { createRootRoute } from '@tanstack/react-router'
+import { Link, Outlet, useNavigate, useRouterState } from '@tanstack/react-router'
+import { createRootRouteWithContext } from '@tanstack/react-router'
+import type { QueryClient } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
+import { useEffect } from 'react'
+import { registerUnauthorizedHandler } from '@/shared/http/axios'
+import { tokenStore } from '@/features/auth/tokenStore'
+import { clearPrivateSession } from '@/features/auth/useAuthMutations'
+
+export interface RouterContext {
+  queryClient: QueryClient
+}
 
 /**
- * Rota raiz: apenas o `Outlet` onde as rotas filhas são renderizadas. Sem
- * layout de app ainda (header/nav ficam para uma camada futura) — o
- * objetivo da Camada 0 é provar a stack ponta-a-ponta, não a UI final.
- *
- * `notFoundComponent` cobre qualquer caminho sem rota correspondente
- * (404 global), usando os tokens do tema GreenMint.
+ * Rota raiz: `Outlet` + um observador de sessão que trata expiração (401).
+ * `notFoundComponent` cobre qualquer caminho sem rota (404 global).
  */
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
 })
 
 function RootComponent() {
+  useExpirationRedirect()
   return <Outlet />
+}
+
+/**
+ * Em 401 fora dos endpoints de auth (sessão expirada durante navegação),
+ * limpa a sessão e redireciona ao login preservando o destino atual.
+ */
+function useExpirationRedirect() {
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const href = useRouterState({ select: (s) => s.location.href })
+
+  useEffect(() => {
+    return registerUnauthorizedHandler(() => {
+      tokenStore.clear()
+      clearPrivateSession(queryClient)
+      navigate({ to: '/login', search: { redirect: href } })
+    })
+  }, [navigate, queryClient, href])
 }
 
 function NotFoundComponent() {

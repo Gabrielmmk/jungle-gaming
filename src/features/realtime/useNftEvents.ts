@@ -4,6 +4,7 @@ import { io } from 'socket.io-client'
 import type { EventEnvelope } from '@/contracts/events'
 import { EVENTS } from '@/contracts/events'
 import type { ListNftsResponse, Nft } from '@/contracts/nft'
+import { useSession } from '@/features/auth/useSession'
 
 /**
  * URL do endpoint de socket.io mockado. DEVE casar exatamente com o
@@ -74,6 +75,12 @@ export interface UseNftEventsOptions {
  */
 export function useNftEvents(options: UseNftEventsOptions = {}): void {
   const queryClient = useQueryClient()
+  // A conexão carrega o userId da sessão (o handler mock lê `?userId=` no
+  // handshake) para que eventos por usuário (ex.: order.updated) sejam
+  // roteados corretamente. Ao trocar de usuário/deslogar, o userId muda e o
+  // efeito reconecta — liberando a subscription anterior.
+  const { user } = useSession()
+  const userId = user?.id ?? 'anon'
 
   // Guarda a versão mais recente do callback em um ref, lido de dentro do
   // handler do socket — evita precisar incluir `onApplied` nas deps do
@@ -88,7 +95,7 @@ export function useNftEvents(options: UseNftEventsOptions = {}): void {
   useEffect(() => {
     if (typeof window === 'undefined') return
 
-    const socket = io(SOCKET_URL, { transports: ['websocket'] })
+    const socket = io(SOCKET_URL, { transports: ['websocket'], query: { userId } })
 
     const applyUpdate = (envelope: EventEnvelope<unknown>): void => {
       if (!isNftUpdatedEnvelope(envelope)) return
@@ -139,5 +146,5 @@ export function useNftEvents(options: UseNftEventsOptions = {}): void {
       socket.off(EVENTS.nftUpdated, applyUpdate)
       socket.close()
     }
-  }, [queryClient])
+  }, [queryClient, userId])
 }

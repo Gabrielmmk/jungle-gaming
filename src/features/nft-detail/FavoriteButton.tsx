@@ -1,6 +1,6 @@
 import { Heart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
+import { AuthDialog } from '@/features/auth/AuthDialog'
 import { useFavorites } from '@/features/favorites/useFavorites'
 
 interface FavoriteButtonProps {
@@ -34,32 +34,13 @@ export function FavoriteButton({ id }: FavoriteButtonProps) {
         {favorited ? 'Favoritado' : 'Favoritar'}
       </Button>
 
-      <Dialog
+      <AuthDialog
         open={showLoginPrompt}
         onOpenChange={(open) => {
           if (!open) dismissLoginPrompt()
         }}
-      >
-        <DialogContent>
-          <DialogTitle>Faça login para favoritar</DialogTitle>
-          <DialogDescription>
-            Você precisa estar conectado para salvar NFTs nos favoritos.
-          </DialogDescription>
-          <div className="mt-2 flex justify-end gap-2">
-            <Button type="button" variant="ghost" size="sm" onClick={dismissLoginPrompt}>
-              Agora não
-            </Button>
-            {/*
-              `/login` ainda não existe como rota nesta camada (ver
-              mesma nota em `Header.tsx`) — âncora comum em vez do
-              `Link` tipado, cai no 404 global, o que é aceitável aqui.
-            */}
-            <Button asChild type="button" variant="default" size="sm">
-              <a href="/login">Entrar</a>
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+        description="Entre ou crie sua conta para salvar NFTs nos favoritos."
+      />
     </>
   )
 }
