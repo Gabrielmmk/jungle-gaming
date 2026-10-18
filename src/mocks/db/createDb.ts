@@ -16,6 +16,8 @@ export interface MockDb {
   bumpNftVersion: (id: string, patch: Partial<Nft>) => Nft
   persist: () => Promise<void>
   resetScenario: () => Promise<void>
+  /** Substitui o estado em memória por um estado previamente persistido (ex.: IndexedDB). */
+  hydrate: (nextState: DbState) => void
 }
 
 const matchesQuery = (nft: Nft, q: string): boolean => {
@@ -91,5 +93,9 @@ export const createDb = (initialState?: DbState): MockDb => {
     await saveState(state)
   }
 
-  return { listNfts, getNft, bumpNftVersion, persist, resetScenario }
+  const hydrate = (nextState: DbState): void => {
+    state = nextState
+  }
+
+  return { listNfts, getNft, bumpNftVersion, persist, resetScenario, hydrate }
 }

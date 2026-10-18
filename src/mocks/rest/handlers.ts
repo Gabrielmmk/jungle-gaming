@@ -1,17 +1,8 @@
 import { http, HttpResponse } from 'msw'
 import { listNftsParamsSchema } from '@/contracts/nft'
 import { HTTP_BY_CODE, type ApiError } from '@/contracts/errors'
-import { createDb } from '@/mocks/db/createDb'
-import { buildSeed } from '@/mocks/fixtures/seed'
+import { db } from '@/mocks/db/instance'
 import { applyLatency, getScenario, maybeFault } from '@/mocks/scenarios/scenarios'
-
-/**
- * Instância única do db compartilhada por todos os handlers REST (e,
- * futuramente, pela camada de sockets). Para a Camada 0 um singleton de
- * módulo é suficiente — cada processo de teste/app recebe sua própria
- * instância isolada ao importar este módulo.
- */
-const db = createDb(buildSeed())
 
 /**
  * O handler é uma casca fina: parseia a requisição, delega ao db,
