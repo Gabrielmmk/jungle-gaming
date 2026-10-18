@@ -12,4 +12,10 @@ const resolveBaseUrl = (): string => {
   }
 }
 
-export const api = axios.create({ baseURL: resolveBaseUrl() })
+// `indexes: null` faz arrays serializarem como chaves repetidas sem
+// colchetes (ex.: categories=Music&categories=Gaming), formato que o
+// helper parseListParams dos handlers mock lê via searchParams.getAll(...).
+export const api = axios.create({
+  baseURL: resolveBaseUrl(),
+  paramsSerializer: { indexes: null },
+})
