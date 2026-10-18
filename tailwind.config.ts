@@ -49,6 +49,14 @@ export default {
         heading: ['24px', '100%'],
         display: ['43px', '70px'],
       },
+      keyframes: {
+        shimmer: {
+          '100%': { transform: 'translateX(100%)' },
+        },
+      },
+      animation: {
+        shimmer: 'shimmer 1.6s ease-in-out infinite',
+      },
     },
   },
   plugins: [],
