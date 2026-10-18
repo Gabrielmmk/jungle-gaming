@@ -91,10 +91,7 @@ function NftDetailPage() {
       <>
         <Header />
         <main className="px-6 py-16">
-          <ErrorState
-            title="Não foi possível carregar este NFT"
-            onRetry={() => refetch()}
-          />
+          <ErrorState title="Não foi possível carregar este NFT" onRetry={() => refetch()} />
         </main>
         <Footer />
       </>
@@ -167,12 +164,7 @@ function NftDetailPage() {
                 Comprar
               </Button>
               <FavoriteButton id={nft.id} />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label="Compartilhar"
-              >
+              <Button type="button" variant="ghost" size="icon" aria-label="Compartilhar">
                 <Share2 aria-hidden="true" className="size-4" />
               </Button>
             </div>
@@ -232,8 +224,8 @@ function NftDetailPage() {
                     <span>{nft.ratingAvg.toFixed(1)} de média geral</span>
                   </div>
                   <p className="mt-2 text-body text-text-secondary">
-                    Avaliações individuais de colecionadores chegam em uma camada futura
-                    (esta é uma visão agregada, apresentacional).
+                    Avaliações individuais de colecionadores chegam em uma camada futura (esta é uma
+                    visão agregada, apresentacional).
                   </p>
                 </li>
               </ul>

@@ -53,7 +53,7 @@ export function Discovery() {
           aria-hidden="true"
           className="absolute left-0 top-0 h-0.5 w-full overflow-hidden bg-surface-dark"
         >
-          <div className="h-full w-1/3 animate-pulse bg-primary" />
+          <div className="h-full w-1/3 motion-safe:animate-pulse bg-primary" />
         </div>
       )}
 

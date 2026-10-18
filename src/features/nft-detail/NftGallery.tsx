@@ -54,7 +54,9 @@ export function NftGallery({ name, images }: NftGalleryProps) {
             className={cn(
               'size-16 shrink-0 overflow-hidden rounded-md border-2 transition-colors',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-ink',
-              index === activeIndex ? 'border-primary' : 'border-border-soft hover:border-text-secondary',
+              index === activeIndex
+                ? 'border-primary'
+                : 'border-border-soft hover:border-text-secondary',
             )}
           >
             <img

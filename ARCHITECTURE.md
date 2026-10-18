@@ -47,7 +47,7 @@ src/
     socket/     emitter (roteamento por usuário) + handlers (binding Socket.IO)
     browser.ts  setupWorker (REST + WS) + enableMocks() + window.__greenmint
     server.ts   setupServer (node) para testes
-  features/   hooks por domínio (nfts: useNfts, useNftEvents)
+  features/   hooks por domínio (discovery, nft-detail, favorites, realtime: useNftEvents)
   routes/     telas (code-based router)
 ```
 
@@ -105,7 +105,10 @@ enunciado — "documente o transporte e suas limitações"):
 Eventos carregam `{ id, resource, version, payload }`. O cliente tolera duplicatas e
 eventos antigos: `useNftEvents` só aplica um evento quando `envelope.version` é
 **estritamente maior** que a versão em cache — nunca regride nem reaplica efeitos.
-Listeners e o socket são liberados no unmount.
+A partir da Camada 2, essa regra é aplicada tanto ao(s) cache(s) de listagem
+(`['nfts', ...]`) quanto ao cache de detalhe (`['nft', id]`), já que o hook é
+montado tanto na Início quanto no detalhe (ver seção "Descoberta (Camada 2)").
+Listeners e o socket são liberados no unmount, em cada rota que monta o hook.
 
 ## Estratégia de cache (TanStack Query)
 
@@ -146,6 +149,96 @@ Autenticação, sessão recuperável, expiração e troca de usuário são entre
 Camada 1. O isolamento de dados por usuário já está previsto no db (partes por
 usuário) e no emitter (roteamento por usuário).
 
+## Descoberta (Camada 2)
+
+Tela de Início (`/`) e detalhe (`/nft/:id`), com o catálogo, filtros, busca,
+ordenação, paginação, favoritos (gated) e atualização em tempo real.
+
+### Rotas e estado na URL
+
+`src/features/discovery/useNftSearch.ts` é a única fonte de verdade dos
+parâmetros de busca (`q`, `categories`, `networks`, `minPrice`, `maxPrice`,
+`sort`, `page`) — vivem nos search params da rota `/` (`nftSearchSchema`,
+validados pelo TanStack Router), não em `useState` local. Isso dá
+back/forward do navegador, URLs compartilháveis e refresh preservando o
+filtro. Qualquer mudança de filtro/busca/ordenação reseta `page` para `1`
+(evita cair numa página inexistente depois de reduzir o total de
+resultados); mudar só `page` não afeta os demais parâmetros.
+
+### Facets globais
+
+`GET /api/nfts` devolve `facets` (contagens por categoria/rede) calculadas
+sobre o catálogo **inteiro**, não sobre o resultado já filtrado — os
+checkboxes de filtro mostram sempre quantos itens existem em cada
+categoria/rede no universo completo, para que o usuário veja o que pode
+ainda ser combinado em vez de só o que resta depois do filtro atual.
+
+### Favoritos gated (401 → prompt de login)
+
+`useFavorites` (`src/features/favorites/`) distingue usuário autenticado de
+anônimo. Sem sessão, `toggleFavorite` **não** chama a API (evitaria um 401
+silencioso ou, peior, fingir que salvou): liga um prompt local
+(`showLoginPrompt`) convidando para login, renderizado por quem usa o hook
+(`FavoriteButton`). Persistência real do favorito (por usuário, via API) é
+entregue na Camada 1 (sessão); aqui o botão já está pronto para o fluxo
+autenticado, só falta o backend de sessão real.
+
+### COMPRAR "em breve" sem falso sucesso
+
+O carrinho é escopo da Camada 3. Em vez de simular um "adicionado ao
+carrinho" (sucesso fictício que o usuário acreditaria), o botão "Comprar"
+na tela de detalhe (`src/routes/nft.$id.tsx`) exibe um aviso honesto —
+"Carrinho de compras em breve. Essa ação ainda não está disponível." — via
+`role="status"`, sem persistir nada e sem navegar para um fluxo
+inexistente. Mesmo princípio em outros pontos da UI fora do escopo desta
+camada (links "Criadores"/"Aprenda" no header, "Ver tudo" do Diário da
+Cunhagem): marcados com `aria-disabled` + rótulo "em breve" em vez de
+apontar para uma rota 404 ou fingir uma ação.
+
+### Tempo real no catálogo e no detalhe (`nft.updated`)
+
+`useNftEvents` (`src/features/realtime/useNftEvents.ts`, movido de
+`features/nfts/` nesta camada) é montado tanto na Início quanto no
+detalhe — cada rota mantém sua própria conexão socket.io (aberta/fechada no
+mount/unmount), e o evento `nft.updated` é aplicado em **ambos** os caches
+do React Query que possam estar afetados:
+
+- todas as queries de listagem já cacheadas (`['nfts', ...]`, uma por
+  combinação de parâmetros);
+- o cache de detalhe do NFT afetado (`['nft', id]`), se existir.
+
+A regra de dedupe por versão (`envelope.version` estritamente maior que a
+`version` em cache) é aplicada identicamente nos dois casos — um evento
+atrasado ou duplicado nunca regride nenhum dos dois caches. Quando uma
+atualização é efetivamente aplicada, o hook invoca `onApplied(nft)`
+(lido de um `ref` atualizado em efeito próprio, para não forçar reconectar o
+socket a cada re-render do consumidor com uma função inline nova). A tela
+de detalhe usa esse callback para acender um indicador acessível
+(`UpdatedBadge`, `src/components/feedback/UpdatedBadge.tsx`) perto do
+preço — ícone + texto dentro de um `role="status"` (`aria-live="polite"`
+implícito, nunca só cor), que se limpa sozinho após alguns segundos.
+
+### Decisões e ajustes de acessibilidade/assets nesta camada
+
+- **Movimento sempre `motion-safe:`**: além do shimmer do skeleton (já
+  gated desde a Camada 0), o hover-zoom do `NftCard`
+  (`motion-safe:group-hover:scale-105`) e a barra de "atualizando em
+  segundo plano" do catálogo (`motion-safe:animate-pulse`) agora também
+  respeitam `prefers-reduced-motion` — nenhuma animação roda fora desse
+  guard.
+- **Nada depende só de cor**: disponibilidade do card (ícone
+  `PackageCheck`/`PackageX` + texto), favorito (`aria-pressed` + ícone
+  preenchido + rótulo), edição esgotada (rótulo textual, não só opacidade)
+  e o novo badge de atualização em tempo real (ícone + texto) seguem o
+  mesmo princípio.
+- **Filtros móveis**: o drawer de filtros (`Sheet`, Radix Dialog) já
+  herda focus trap, fechar no Escape e retorno de foco ao disparador —
+  reaproveitado em vez de reimplementado.
+- Sem desvios de asset relevantes vs. Figma nesta camada — as imagens do
+  catálogo usam o seed determinístico de mocks (Camada 0); nenhuma troca de
+  fonte/ícone/paleta foi necessária além do que já estava documentado na
+  Camada 0.
+
 ## Decisões e pins de ambiente
 
 - **MSW v2** (não v3): o `@mswjs/socket.io-binding` só suporta o range de peer da v2.
@@ -160,5 +253,8 @@ usuário) e no emitter (roteamento por usuário).
 ## Desvios em relação ao Figma
 
 Nenhum desvio relevante na Camada 0 (a página de prova de catálogo é mínima e será
-substituída pela tela de Início na Camada 2). Desvios e substituições de asset serão
-registrados aqui conforme as telas forem implementadas.
+substituída pela tela de Início na Camada 2). Na Camada 2 (Descoberta), nenhum
+desvio relevante de asset/paleta/tipografia foi necessário — ver detalhes de a11y
+e decisões específicas da camada na seção "Descoberta (Camada 2)" acima. Desvios e
+substituições de asset futuros serão registrados aqui conforme as telas forem
+implementadas.

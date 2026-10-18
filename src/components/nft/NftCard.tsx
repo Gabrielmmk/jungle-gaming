@@ -24,7 +24,7 @@ export function NftCard({ item }: { item: Nft }) {
           src={item.image}
           alt={`${item.name} — ${item.collection}`}
           loading="lazy"
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className="h-full w-full object-cover transition-transform duration-300 motion-safe:group-hover:scale-105"
         />
       </div>
       <div className="flex flex-col gap-1 p-4">

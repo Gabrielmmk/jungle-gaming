@@ -40,11 +40,9 @@ export function useFavorites(): UseFavoritesResult {
     retry: false,
   })
 
-  const isAuthenticated = !(
-    isAxiosError(query.error) && query.error.response?.status === 401
-  )
+  const isAuthenticated = !(isAxiosError(query.error) && query.error.response?.status === 401)
 
-  const favorites = isAuthenticated ? query.data ?? [] : []
+  const favorites = isAuthenticated ? (query.data ?? []) : []
 
   const addMutation = useMutation({
     mutationFn: (id: string) => api.post(`/favorites/${id}`),
