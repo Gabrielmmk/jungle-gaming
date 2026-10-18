@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { createRoute, Link } from '@tanstack/react-router'
 import { Route as rootRoute } from '@/routes/__root'
 import { Star, Share2, SearchX } from 'lucide-react'
@@ -6,6 +6,7 @@ import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { ErrorState } from '@/components/feedback/ErrorState'
 import { NftDetailSkeleton } from '@/components/nft/NftDetailSkeleton'
+import { UpdatedBadge } from '@/components/feedback/UpdatedBadge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useNft } from '@/features/nft-detail/useNft'
@@ -13,7 +14,10 @@ import { NftGallery } from '@/features/nft-detail/NftGallery'
 import { EditionQuantity } from '@/features/nft-detail/EditionQuantity'
 import { FavoriteButton } from '@/features/nft-detail/FavoriteButton'
 import { RelatedCollection } from '@/features/nft-detail/RelatedCollection'
+import { useNftEvents } from '@/features/realtime/useNftEvents'
 import { formatEth } from '@/shared/eth/money'
+
+const UPDATED_BADGE_TIMEOUT_MS = 4000
 
 /**
  * Rota de detalhe do NFT (`/nft/:id`). Substitui o placeholder da Camada 0
@@ -31,6 +35,22 @@ function NftDetailPage() {
   const { nft, isLoading, isError, notFound, refetch } = useNft(id)
   const [quantity, setQuantity] = useState(1)
   const [buyFeedback, setBuyFeedback] = useState(false)
+  const [updatedMessage, setUpdatedMessage] = useState<string | null>(null)
+  const clearBadgeTimeout = useRef<ReturnType<typeof setTimeout>>()
+
+  // Mantida também na tela de detalhe (não só no catálogo) para que o
+  // preço/disponibilidade sejam refletidos em tempo real aqui também, com
+  // um indicador acessível de que algo mudou (ver UpdatedBadge).
+  useNftEvents({
+    onApplied: (updated) => {
+      if (updated.id !== id) return
+      clearTimeout(clearBadgeTimeout.current)
+      setUpdatedMessage('Preço e disponibilidade atualizados agora')
+      clearBadgeTimeout.current = setTimeout(() => {
+        setUpdatedMessage(null)
+      }, UPDATED_BADGE_TIMEOUT_MS)
+    },
+  })
 
   if (isLoading) {
     return (
@@ -114,7 +134,10 @@ function NftDetailPage() {
               <span>({nft.ratingCount} avaliações)</span>
             </div>
 
-            <p className="text-heading text-text-accent">{formatEth(nft.priceEth)}</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="text-heading text-text-accent">{formatEth(nft.priceEth)}</p>
+              {updatedMessage && <UpdatedBadge message={updatedMessage} />}
+            </div>
 
             <div>
               <h2 className="text-body-lg font-medium text-text-primary">Sobre este NFT</h2>

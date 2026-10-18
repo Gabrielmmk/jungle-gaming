@@ -8,6 +8,7 @@ import { FeaturedNft } from '@/components/home/FeaturedNft'
 import { MintingDiary } from '@/components/home/MintingDiary'
 import { Discovery } from '@/features/discovery/Discovery'
 import { SearchBox } from '@/features/discovery/SearchBox'
+import { useNftEvents } from '@/features/realtime/useNftEvents'
 
 /**
  * Roteamento code-based: a rota índice é criada a partir da rota raiz
@@ -30,6 +31,12 @@ export const Route = createRoute({
 })
 
 function IndexPage() {
+  // Conecta ao canal de tempo real para que `nft.updated` reflita no
+  // catálogo (cache `['nfts', ...]`) sem exigir refetch. A indicação
+  // visual "em atualização" dos cards já existe via `isBackgroundUpdating`
+  // em Discovery; aqui só garantimos que o cache seja mantido fresco.
+  useNftEvents()
+
   return (
     <div className="flex min-h-screen flex-col bg-ink font-mono text-text-primary">
       <Header search={<SearchBox />} />
