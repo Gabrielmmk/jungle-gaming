@@ -11,6 +11,9 @@ export const SCENARIO_NAMES = [
   'transient',
   'unauthorized',
   'offline',
+  'session-expired',
+  'register-conflict',
+  'validation-error',
 ] as const
 
 export type ScenarioName = (typeof SCENARIO_NAMES)[number]
@@ -77,6 +80,9 @@ const LATENCY_MS_BY_SCENARIO: Record<ScenarioName, number> = {
   transient: 0,
   unauthorized: 0,
   offline: 0,
+  'session-expired': 0,
+  'register-conflict': 0,
+  'validation-error': 0,
 }
 
 /**
