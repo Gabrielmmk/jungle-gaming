@@ -7,12 +7,15 @@ import {
   type Nft,
 } from '@/contracts/nft'
 import { buildSeed } from '@/mocks/fixtures/seed'
+import { saveState } from '@/mocks/persistence/indexeddb'
 import type { DbState } from '@/mocks/db/types'
 
 export interface MockDb {
   listNfts: (params: ListNftsParams) => ListNftsResponse
   getNft: (id: string) => Nft | undefined
   bumpNftVersion: (id: string, patch: Partial<Nft>) => Nft
+  persist: () => Promise<void>
+  resetScenario: () => Promise<void>
 }
 
 const matchesQuery = (nft: Nft, q: string): boolean => {
@@ -77,5 +80,16 @@ export const createDb = (initialState?: DbState): MockDb => {
     return updated
   }
 
-  return { listNfts, getNft, bumpNftVersion }
+  // A persistência é assíncrona e isolada em persist()/resetScenario();
+  // as leituras (listNfts/getNft) permanecem síncronas e puras.
+  const persist = async (): Promise<void> => {
+    await saveState(state)
+  }
+
+  const resetScenario = async (): Promise<void> => {
+    state = buildSeed()
+    await saveState(state)
+  }
+
+  return { listNfts, getNft, bumpNftVersion, persist, resetScenario }
 }
