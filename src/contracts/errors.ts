@@ -1,4 +1,5 @@
-export type ApiErrorCode = 'validation' | 'unauthorized' | 'forbidden' | 'not_found' | 'conflict' | 'transient'
+export type ApiErrorCode =
+  'validation' | 'unauthorized' | 'forbidden' | 'not_found' | 'conflict' | 'transient'
 
 export const HTTP_BY_CODE: Record<ApiErrorCode, number> = {
   validation: 422,

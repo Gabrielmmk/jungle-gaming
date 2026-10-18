@@ -18,6 +18,7 @@ export const addEth = (a: string, b: string): EthAmount => ethAmount(new Big(a).
 
 export const subEth = (a: string, b: string): EthAmount => ethAmount(new Big(a).minus(b).toString())
 
-export const mulEthByQty = (a: string, qty: number): EthAmount => ethAmount(new Big(a).times(qty).toString())
+export const mulEthByQty = (a: string, qty: number): EthAmount =>
+  ethAmount(new Big(a).times(qty).toString())
 
 export const formatEth = (a: string): string => `${new Big(a).toString()} ETH`

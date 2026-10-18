@@ -34,7 +34,12 @@ describe.skip('socket nft.updated (integração — adiado p/ Camada 6 Playwrigh
       socket.on('connect', () => r())
       setTimeout(() => reject(new Error('socket connect timeout')), 4000)
     })
-    emitNftUpdated({ id: 'evt-1', resource: 'nft:1', version: 2, payload: { id: '1', priceEth: '9.9' } })
+    emitNftUpdated({
+      id: 'evt-1',
+      resource: 'nft:1',
+      version: 2,
+      payload: { id: '1', priceEth: '9.9' },
+    })
     const evt = await received
     expect(evt.resource).toBe('nft:1')
     expect(evt.version).toBe(2)

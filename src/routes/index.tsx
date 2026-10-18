@@ -57,7 +57,10 @@ function IndexPage() {
       )}
 
       {!isLoading && !isError && data && data.items.length > 0 && (
-        <ul data-testid="nfts-grid" className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <ul
+          data-testid="nfts-grid"
+          className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+        >
           {data.items.map((nft) => (
             <NftCard key={nft.id} nft={nft} />
           ))}

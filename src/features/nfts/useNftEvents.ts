@@ -20,7 +20,11 @@ const isNftUpdatedEnvelope = (
   envelope: EventEnvelope<unknown>,
 ): envelope is EventEnvelope<NftUpdatedPayload> => {
   const payload = envelope.payload
-  return typeof payload === 'object' && payload !== null && typeof (payload as { id?: unknown }).id === 'string'
+  return (
+    typeof payload === 'object' &&
+    payload !== null &&
+    typeof (payload as { id?: unknown }).id === 'string'
+  )
 }
 
 /**

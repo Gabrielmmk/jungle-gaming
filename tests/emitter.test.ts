@@ -16,7 +16,9 @@ import {
  * TÉCNICO em socket/handlers.ts: o socket.io-client não é interceptado sob
  * node/jsdom).
  */
-function createFakeClient(userId?: string): EmitterClient & { sent: Array<{ event: string; data: unknown }> } {
+function createFakeClient(
+  userId?: string,
+): EmitterClient & { sent: Array<{ event: string; data: unknown }> } {
   const sent: Array<{ event: string; data: unknown }> = []
   return {
     userId,

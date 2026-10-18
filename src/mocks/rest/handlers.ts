@@ -17,7 +17,10 @@ export const handlers = [
 
     const fault = maybeFault(scenario, 'nfts')
     if (fault) {
-      const body: ApiError = { code: fault.code, message: `Cenário "${scenario}" simulou uma falha.` }
+      const body: ApiError = {
+        code: fault.code,
+        message: `Cenário "${scenario}" simulou uma falha.`,
+      }
       return HttpResponse.json(body, { status: HTTP_BY_CODE[fault.code] })
     }
 
