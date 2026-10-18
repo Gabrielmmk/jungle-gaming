@@ -1,73 +1,112 @@
-# React + TypeScript + Vite
+# GreenMint — NFT Marketplace
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Marketplace de NFTs (desafio frontend) em React + TypeScript, com dados totalmente
+simulados (REST + tempo real) na camada de rede. Estética **GreenMint** (dark/earthy,
+tipografia monoespaçada), fiel ao Figma.
 
-Currently, two official plugins are available:
+> **Status:** Camada 0 (Fundação & Mock Backend) concluída. As demais camadas
+> (Sessão, Descoberta, Carrinho, Checkout, Tempo Real, Testes, Performance/Deploy)
+> são entregues incrementalmente. Veja `ARCHITECTURE.md` para a visão de arquitetura.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Stack
 
-## React Compiler
+| Responsabilidade         | Tecnologia                          |
+| ------------------------ | ----------------------------------- |
+| Interface / Linguagem    | React 18 + TypeScript               |
+| Build                    | Vite (SPA)                          |
+| Roteamento               | TanStack Router (code-based)        |
+| Estado remoto            | TanStack Query                      |
+| HTTP                     | Axios                               |
+| Estilização              | Tailwind CSS + shadcn/ui            |
+| Mocking REST + WebSocket | MSW v2 + `@mswjs/socket.io-binding` |
+| Tempo real               | socket.io-client                    |
+| Precisão de ETH          | big.js (strings decimais)           |
+| Testes unitários         | Vitest                              |
+| Gerenciador de pacotes   | pnpm                                |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Pré-requisitos
 
-## Expanding the ESLint configuration
+- Node.js (o projeto foi desenvolvido com Node 20; algumas devDeps estão pinadas
+  para compatibilidade com Node 20 — ver notas em `ARCHITECTURE.md`).
+- pnpm.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Setup
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+pnpm install
+cp .env.example .env   # (o .env já vem versionado com defaults de dev)
+pnpm dev
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+A aplicação sobe em `http://localhost:5173` com os mocks ativos.
+
+## Variáveis de ambiente
+
+| Variável            | Default | Descrição                                                             |
+| ------------------- | ------- | --------------------------------------------------------------------- |
+| `VITE_ENABLE_MOCKS` | `true`  | Ativa o mock backend (MSW REST + Socket.IO). Obrigatório para a demo. |
+| `VITE_API_URL`      | `/api`  | Base URL do Axios (interceptada pelo MSW).                            |
+| `VITE_SCENARIO`     | `happy` | Cenário de mock padrão (ver abaixo).                                  |
+
+## Comandos
+
+| Comando                         | Ação                      |
+| ------------------------------- | ------------------------- |
+| `pnpm dev`                      | Desenvolvimento com mocks |
+| `pnpm build`                    | Build de produção         |
+| `pnpm preview`                  | Preview do build          |
+| `pnpm typecheck`                | Checagem de tipos (`tsc`) |
+| `pnpm lint`                     | ESLint                    |
+| `pnpm format:check`             | Prettier (check)          |
+| `pnpm test` / `pnpm test --run` | Testes Vitest             |
+
+## Mock backend: cenários e reset
+
+Toda a simulação vive na camada de rede (MSW). O estado é coerente entre catálogo,
+carrinho, favoritos, perfil, carteiras e pedidos, e persiste em IndexedDB para
+sobreviver a refresh.
+
+**Selecionar um cenário** (precedência: query param → localStorage → env → `happy`):
+
+- Via URL: `http://localhost:5173/?scenario=slow`
+- Via console: `localStorage.setItem('greenmint:scenario', 'transient')`
+- Via env: `VITE_SCENARIO=slow`
+
+Cenários disponíveis nesta camada: `happy` (padrão, sem latência/erro), `slow`,
+`variable` (latência variável), `transient` (503), `unauthorized` (401), `offline`.
+Mais cenários determinísticos (cupom inválido, edição esgotada, timeout de pedido,
+etc.) são adicionados nas camadas seguintes.
+
+**Reset do cenário** (restaura integralmente o seed conhecido): no console do
+navegador, com mocks ativos:
 
 ```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+await window.__greenmint.resetScenario()
 ```
+
+## Reproduzir fluxos de tempo real (dev)
+
+Com mocks ativos, o objeto `window.__greenmint` expõe gatilhos para exercitar os
+eventos deterministicamente (o mesmo mecanismo que os testes E2E usarão):
+
+```js
+// atualizar preço de um NFT (precisa version > a versão em cache para aplicar)
+window.__greenmint.emitNftUpdated({
+  id: 'evt-1', resource: 'nft:<id>', version: <versaoAtual + 1>,
+  payload: { id: '<id>', priceEth: '99.9' }
+})
+```
+
+A interface reflete a alteração sem regredir em eventos antigos/duplicados.
+
+## Credenciais fictícias
+
+Dois usuários de teste são semeados no mock backend (ver `src/mocks/fixtures/seed.ts`).
+Os fluxos de autenticação são entregues na Camada 1; as credenciais serão
+documentadas aqui quando o login estiver disponível. Nenhuma senha é armazenada em
+texto claro.
+
+## Documentação
+
+- `ARCHITECTURE.md` — arquitetura, contratos, política de sessão/cache, transporte
+  de tempo real e suas limitações, e decisões/desvios.
