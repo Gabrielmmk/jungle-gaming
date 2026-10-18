@@ -143,11 +143,35 @@ env → `happy`) e expõe `applyLatency`/`maybeFault` usados pelos adapters. Cen
 são determinísticos e reproduzíveis. O padrão `happy` (sem latência/erro) é o usado
 pelo build de demo e pela auditoria Lighthouse.
 
-## Política de sessão
+## Política de sessão (Camada 1)
 
-Autenticação, sessão recuperável, expiração e troca de usuário são entregues na
-Camada 1. O isolamento de dados por usuário já está previsto no db (partes por
-usuário) e no emitter (roteamento por usuário).
+- **Token simulado:** `POST /auth/login` e `/auth/register` retornam `{ token, user }`.
+  O token é guardado no localStorage (`greenmint:token`, `src/features/auth/tokenStore.ts`)
+  e injetado pelo **request interceptor** do Axios como `Authorization: Bearer`. O MSW
+  resolve `token → userId` pela tabela de sessões do `db` (fonte única). Senhas são
+  **hasheadas** no `db` (djb2 — mock, nunca texto puro) e jamais retornadas pela API.
+- **Recuperação no refresh:** `useSession` consulta `GET /session` no boot; 401 →
+  deslogado (não erro fatal). As queries de sessão são compartilhadas com o guard.
+- **Proteção de rotas:** `beforeLoad: requireAuth` (`src/features/auth/guard.ts`) usa
+  `queryClient.ensureQueryData(sessionQueryOptions)` antes de decidir (evita race de
+  redirect) e, sem sessão, redireciona para `/login?redirect=<destino>` — funciona em
+  acesso direto e refresh. Aplicado a `/profile` e `/wallets` (checkout/pedidos nas
+  próximas camadas).
+- **Expiração durante a navegação:** o **response interceptor** do Axios, em 401 fora
+  de `/auth/*` e `/session`, notifica handlers registrados; a app limpa a sessão e
+  redireciona ao login preservando o destino. Não redireciona nos endpoints de auth
+  (evita loop). Cenário `session-expired` simula isso de forma reproduzível.
+- **Logout e troca de usuário (isolamento — eliminatório):** `logout`/novo login
+  removem do cache as queries privadas (`session`/`favorites`/`profile`/`wallets`/
+  `orders`) e **reconectam o socket** com o novo `userId` (o handler mock lê `?userId=`
+  no handshake), liberando subscriptions da sessão anterior. Assim, eventos por usuário
+  (`order.updated`) nunca vazam entre usuários.
+- **Favoritos otimistas:** `toggleFavorite` atualiza o cache `['favorites']` em
+  `onMutate`, faz **rollback** em `onError` e invalida em `onSettled` — a atualização
+  otimista com rollback exigida pelo enunciado (§4).
+- **Login híbrido:** rotas `/login` e `/register` (com `redirect`) e o mesmo formulário
+  como **modal** (`AuthDialog`, Radix) quando disparado de um fluxo (ex.: favoritar).
+  Social (Google/Facebook) e "Esqueceu a senha?" são coerentes, sem falso sucesso.
 
 ## Descoberta (Camada 2)
 

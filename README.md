@@ -4,9 +4,10 @@ Marketplace de NFTs (desafio frontend) em React + TypeScript, com dados totalmen
 simulados (REST + tempo real) na camada de rede. Estética **GreenMint** (dark/earthy,
 tipografia monoespaçada), fiel ao Figma.
 
-> **Status:** Camada 0 (Fundação & Mock Backend) concluída. As demais camadas
-> (Sessão, Descoberta, Carrinho, Checkout, Tempo Real, Testes, Performance/Deploy)
-> são entregues incrementalmente. Veja `ARCHITECTURE.md` para a visão de arquitetura.
+> **Status:** Concluídas as camadas de Fundação & Mock Backend, Descoberta
+> (Início + Detalhes) e Sessão & Conta (login/cadastro/perfil/carteiras/favoritos).
+> Pendentes: Carrinho, Checkout, Testes E2E, Performance/Deploy — entregues
+> incrementalmente. Veja `ARCHITECTURE.md` para a visão de arquitetura.
 
 ## Stack
 
@@ -72,10 +73,12 @@ sobreviver a refresh.
 - Via console: `localStorage.setItem('greenmint:scenario', 'transient')`
 - Via env: `VITE_SCENARIO=slow`
 
-Cenários disponíveis nesta camada: `happy` (padrão, sem latência/erro), `slow`,
-`variable` (latência variável), `transient` (503), `unauthorized` (401), `offline`.
-Mais cenários determinísticos (cupom inválido, edição esgotada, timeout de pedido,
-etc.) são adicionados nas camadas seguintes.
+Cenários disponíveis: `happy` (padrão, sem latência/erro), `slow`, `variable`
+(latência variável), `transient` (503), `unauthorized` (401), `offline`,
+`session-expired` (sessão expira → 401 em rotas privadas), `register-conflict`
+(cadastro retorna 409), `validation-error`. Mais cenários determinísticos (cupom
+inválido, edição esgotada, timeout de pedido, etc.) são adicionados nas camadas
+seguintes.
 
 **Reset do cenário** (restaura integralmente o seed conhecido): no console do
 navegador, com mocks ativos:
@@ -102,9 +105,16 @@ A interface reflete a alteração sem regredir em eventos antigos/duplicados.
 ## Credenciais fictícias
 
 Dois usuários de teste são semeados no mock backend (ver `src/mocks/fixtures/seed.ts`).
-Os fluxos de autenticação são entregues na Camada 1; as credenciais serão
-documentadas aqui quando o login estiver disponível. Nenhuma senha é armazenada em
-texto claro.
+Use-os em **Entrar** (`/login` ou o modal de login):
+
+| E-mail                       | Senha       |
+| ---------------------------- | ----------- |
+| `ana.silva@greenmint.test`   | `senha1234` |
+| `bruno.costa@greenmint.test` | `senha1234` |
+
+Também é possível **criar conta** (aba "Criar conta"). Senhas nunca são armazenadas
+em texto claro (hash no mock). Logout e troca de usuário limpam os dados privados em
+cache e reconectam o socket com a nova identidade.
 
 ## Documentação
 
