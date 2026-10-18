@@ -4,7 +4,10 @@ import { Button } from '@/components/ui/button'
 import { useNftSearch } from '@/features/discovery/useNftSearch'
 
 const PRICE_MIN = 0
-const PRICE_MAX = 10
+// Seed atual tem preços até ~6.8 ETH, mas a faixa pretendida vai além
+// (ex.: 12.30 ETH no exemplo da especificação) — teto erguido para cobrir
+// todo o intervalo esperado sem truncar silenciosamente `maxPrice`.
+const PRICE_MAX = 15
 
 function rangeFromSearch(minPrice?: string, maxPrice?: string): [number, number] {
   return [minPrice ? Number(minPrice) : PRICE_MIN, maxPrice ? Number(maxPrice) : PRICE_MAX]

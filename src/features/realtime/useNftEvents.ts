@@ -12,7 +12,7 @@ import type { ListNftsResponse, Nft } from '@/contracts/nft'
  */
 const SOCKET_URL = 'ws://localhost/socket'
 
-interface NftUpdatedPayload extends Partial<Nft> {
+export interface NftUpdatedPayload extends Partial<Nft> {
   id: string
 }
 
@@ -25,6 +25,24 @@ const isNftUpdatedEnvelope = (
     payload !== null &&
     typeof (payload as { id?: unknown }).id === 'string'
   )
+}
+
+/**
+ * Decide se um envelope `nft.updated` deve ser aplicado a um NFT já em
+ * cache, e retorna o resultado — função pura, sem acesso a cache/React
+ * Query, para poder ser testada isoladamente da conexão de socket.
+ *
+ * Regra: só aplica se `envelope.version` for ESTRITAMENTE maior que a
+ * `version` do NFT em cache (nunca regride; versão igual ou menor é
+ * ignorada). Se o `id` do payload não bater com o do NFT em cache, ou se a
+ * versão não avançar, retorna o mesmo `cachedNft` (referência inalterada),
+ * o que permite ao chamador detectar "nada mudou" por `===`.
+ */
+export function applyNftUpdate(cachedNft: Nft, envelope: EventEnvelope<NftUpdatedPayload>): Nft {
+  const { payload } = envelope
+  if (cachedNft.id !== payload.id) return cachedNft
+  if (envelope.version <= cachedNft.version) return cachedNft
+  return { ...cachedNft, ...payload, version: envelope.version }
 }
 
 export interface UseNftEventsOptions {
@@ -87,10 +105,9 @@ export function useNftEvents(options: UseNftEventsOptions = {}): void {
 
         let changed = false
         const items = data.items.map((nft) => {
-          if (nft.id !== payload.id) return nft
-          if (envelope.version <= nft.version) return nft
+          const next = applyNftUpdate(nft, envelope)
+          if (next === nft) return nft
           changed = true
-          const next = { ...nft, ...payload, version: envelope.version }
           applied = next
           return next
         })
@@ -104,8 +121,9 @@ export function useNftEvents(options: UseNftEventsOptions = {}): void {
       // versão, para a tela de detalhe refletir sem precisar de refetch.
       const detailQueries = queryClient.getQueriesData<Nft>({ queryKey: ['nft', payload.id] })
       for (const [queryKey, nft] of detailQueries) {
-        if (!nft || envelope.version <= nft.version) continue
-        const next = { ...nft, ...payload, version: envelope.version }
+        if (!nft) continue
+        const next = applyNftUpdate(nft, envelope)
+        if (next === nft) continue
         applied = next
         queryClient.setQueryData<Nft>(queryKey, next)
       }

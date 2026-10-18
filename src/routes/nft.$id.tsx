@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createRoute, Link } from '@tanstack/react-router'
 import { Route as rootRoute } from '@/routes/__root'
 import { Star, Share2, SearchX } from 'lucide-react'
@@ -37,6 +37,17 @@ function NftDetailPage() {
   const [buyFeedback, setBuyFeedback] = useState(false)
   const [updatedMessage, setUpdatedMessage] = useState<string | null>(null)
   const clearBadgeTimeout = useRef<ReturnType<typeof setTimeout>>()
+
+  // Navegar para outro NFT (mudança de `id`) não deve carregar um badge
+  // "atualizado" obsoleto do NFT anterior, nem deixar o `setTimeout`
+  // pendente da instância anterior disparar `setUpdatedMessage` na nova
+  // instância. O cleanup roda tanto ao trocar `id` quanto ao desmontar.
+  useEffect(() => {
+    return () => {
+      clearTimeout(clearBadgeTimeout.current)
+      setUpdatedMessage(null)
+    }
+  }, [id])
 
   // Mantida também na tela de detalhe (não só no catálogo) para que o
   // preço/disponibilidade sejam refletidos em tempo real aqui também, com
