@@ -27,7 +27,11 @@ export function Pagination({ total, pageSize }: PaginationProps) {
   }
 
   return (
-    <nav aria-label="Paginação" data-testid="pagination" className="flex items-center justify-center gap-1">
+    <nav
+      aria-label="Paginação"
+      data-testid="pagination"
+      className="flex items-center justify-center gap-1"
+    >
       <button
         type="button"
         aria-label="Página anterior"

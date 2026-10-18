@@ -1,6 +1,13 @@
 import { createRoute } from '@tanstack/react-router'
 import { Route as rootRoute } from '@/routes/__root'
 import { nftSearchSchema } from '@/features/discovery/useNftSearch'
+import { Header } from '@/components/layout/Header'
+import { Footer } from '@/components/layout/Footer'
+import { Hero } from '@/components/home/Hero'
+import { FeaturedNft } from '@/components/home/FeaturedNft'
+import { MintingDiary } from '@/components/home/MintingDiary'
+import { Discovery } from '@/features/discovery/Discovery'
+import { SearchBox } from '@/features/discovery/SearchBox'
 
 /**
  * Roteamento code-based: a rota índice é criada a partir da rota raiz
@@ -9,9 +16,11 @@ import { nftSearchSchema } from '@/features/discovery/useNftSearch'
  *
  * `validateSearch` usa o schema de busca da Descoberta (Task 5) para que
  * os search params da URL (`?q=`, `?categories=`, `?page=`, ...) sejam
- * validados/tipados pelo Router. A UI real do catálogo (grid, filtros,
- * paginação) chega na Chunk 3 — aqui só provamos que a rota compila e lê
- * a busca validada via `Route.useSearch()`.
+ * validados/tipados pelo Router.
+ *
+ * Composição da tela de Início (Chunk 3): Header (com `SearchBox` no
+ * slot de busca) + Hero + catálogo (`Discovery`, com filtros/ordenação/
+ * paginação/estados) + banner de destaque + editorial + Footer.
  */
 export const Route = createRoute({
   getParentRoute: () => rootRoute,
@@ -21,14 +30,16 @@ export const Route = createRoute({
 })
 
 function IndexPage() {
-  const search = Route.useSearch()
-
   return (
-    <main className="min-h-screen bg-ink px-6 py-10 font-mono text-text-primary">
-      <h1 className="text-heading text-text-primary">Discovery (em construção)</h1>
-      <p className="mt-2 text-body text-text-secondary">
-        page={search.page} pageSize={search.pageSize}
-      </p>
-    </main>
+    <div className="flex min-h-screen flex-col bg-ink font-mono text-text-primary">
+      <Header search={<SearchBox />} />
+      <main className="flex-1">
+        <Hero />
+        <Discovery />
+        <FeaturedNft />
+        <MintingDiary />
+      </main>
+      <Footer />
+    </div>
   )
 }

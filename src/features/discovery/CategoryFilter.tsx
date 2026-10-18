@@ -26,9 +26,7 @@ export function CategoryFilter({ counts }: CategoryFilterProps) {
   const selected = search.categories ?? []
 
   const toggle = (category: string, checked: boolean) => {
-    const next = checked
-      ? [...selected, category]
-      : selected.filter((c) => c !== category)
+    const next = checked ? [...selected, category] : selected.filter((c) => c !== category)
     setSearch({ categories: next.length > 0 ? next : undefined })
   }
 

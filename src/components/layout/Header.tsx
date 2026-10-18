@@ -46,10 +46,7 @@ export function Header({ search }: HeaderProps) {
             GreenMint
           </Link>
 
-          <nav
-            aria-label="Navegação principal"
-            className="hidden items-center gap-5 md:flex"
-          >
+          <nav aria-label="Navegação principal" className="hidden items-center gap-5 md:flex">
             <Link
               to="/"
               className="text-body text-text-primary hover:text-text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
