@@ -429,4 +429,5 @@ export const buildSeed = (): DbState => ({
   orders: {},
   profiles: {},
   wallets: {},
+  favoritesByUser: {},
 })

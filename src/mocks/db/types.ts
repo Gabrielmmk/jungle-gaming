@@ -61,4 +61,5 @@ export interface DbState {
   orders: Record<string, Order[]>
   profiles: Record<string, Profile>
   wallets: Record<string, Wallet>
+  favoritesByUser: Record<string, string[]>
 }
