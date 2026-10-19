@@ -61,12 +61,48 @@ export function Discovery() {
         <FiltersPanel facets={facets} />
 
         <div className="flex-1">
-          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-body text-text-secondary">
-              {isLoading ? 'Carregando...' : `${total} ${total === 1 ? 'resultado' : 'resultados'}`}
-            </p>
-            <SortSelect />
+          <div className="mb-6 flex flex-col gap-4 border-b border-border-soft pb-4 sm:flex-row sm:items-center sm:justify-between">
+            <div
+              role="tablist"
+              aria-label="Filtro rápido do catálogo"
+              className="flex items-center gap-5 text-body"
+            >
+              {(
+                [
+                  { label: 'Todas as NFTs', sort: undefined },
+                  { label: 'Novos lançamentos', sort: 'recent' as const },
+                  { label: 'Em alta', sort: 'price_desc' as const },
+                ] as const
+              ).map((tab) => {
+                const active = (search.sort ?? undefined) === tab.sort
+                return (
+                  <button
+                    key={tab.label}
+                    role="tab"
+                    aria-selected={active}
+                    type="button"
+                    onClick={() => setSearch({ sort: tab.sort })}
+                    className={`border-b-2 pb-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                      active
+                        ? 'border-primary text-text-primary'
+                        : 'border-transparent text-text-secondary hover:text-text-primary'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                )
+              })}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="whitespace-nowrap text-caption text-text-secondary">
+                Ordenar por:
+              </span>
+              <SortSelect />
+            </div>
           </div>
+          <p className="mb-4 text-caption text-text-secondary">
+            {isLoading ? 'Carregando...' : `${total} ${total === 1 ? 'resultado' : 'resultados'}`}
+          </p>
 
           {isError ? (
             <ErrorState onRetry={() => void refetch()} />

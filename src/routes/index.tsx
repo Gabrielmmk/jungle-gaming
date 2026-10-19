@@ -5,6 +5,7 @@ import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { Hero } from '@/components/home/Hero'
 import { FeaturedNft } from '@/components/home/FeaturedNft'
+import { GenesisBanners } from '@/components/home/GenesisBanners'
 import { MintingDiary } from '@/components/home/MintingDiary'
 import { Discovery } from '@/features/discovery/Discovery'
 import { SearchBox } from '@/features/discovery/SearchBox'
@@ -44,6 +45,7 @@ function IndexPage() {
         <Hero />
         <Discovery />
         <FeaturedNft />
+        <GenesisBanners />
         <MintingDiary />
       </main>
       <Footer />

@@ -12,7 +12,7 @@ const SKELETON_COUNT = 12
 export function NftGrid({ items, isLoading }: { items: Nft[]; isLoading: boolean }) {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: SKELETON_COUNT }, (_, i) => (
           <NftCardSkeleton key={i} />
         ))}
@@ -21,7 +21,7 @@ export function NftGrid({ items, isLoading }: { items: Nft[]; isLoading: boolean
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {items.map((item) => (
         <NftCard key={item.id} item={item} />
       ))}

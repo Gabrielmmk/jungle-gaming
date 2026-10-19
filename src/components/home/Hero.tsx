@@ -29,6 +29,11 @@ export function Hero() {
           <Button variant="default" size="lg" onClick={scrollToCatalog}>
             EXPLORAR
           </Button>
+          <div className="flex gap-2 pt-2" aria-hidden="true">
+            <span className="h-2 w-2 rounded-full bg-primary" />
+            <span className="h-2 w-2 rounded-full bg-text-secondary/40" />
+            <span className="h-2 w-2 rounded-full bg-text-secondary/40" />
+          </div>
         </div>
         <div className="hidden justify-self-end md:block">
           <img
