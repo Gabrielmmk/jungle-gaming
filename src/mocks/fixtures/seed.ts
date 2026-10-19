@@ -2,7 +2,7 @@ import type { Nft } from '@/contracts/nft'
 import type { DbState, User, UserAuth } from '@/mocks/db/types'
 import { hashPassword } from '@/mocks/db/hash'
 
-export const SCHEMA_VERSION = 4
+export const SCHEMA_VERSION = 5
 
 /** Credenciais fictícias dos usuários semeados (documentadas no README). */
 export const SEED_CREDENTIALS = [
@@ -40,6 +40,14 @@ const CATEGORIES = [
   'Generative',
   'Gaming',
   'Memberships',
+] as const
+
+// Artes fornecidas em public/mock-assets/ (coladas pelo usuário).
+const NFT_IMAGES = [
+  '/mock-assets/Image.png',
+  '/mock-assets/Image-1.png',
+  '/mock-assets/Image-2.png',
+  '/mock-assets/Image-3.png',
 ] as const
 
 const NETWORKS = ['Ethereum', 'Polygon', 'Solana'] as const
@@ -409,10 +417,14 @@ const buildNfts = (): Nft[] =>
     const ratingAvg = Math.round((3.5 + ((index * 7) % 16) / 10) * 10) / 10
     const ratingCount = 4 + ((index * 13) % 96)
     const description = DESCRIPTIONS[index % DESCRIPTIONS.length]
-    const baseImage = `/mock-assets/nfts/${slug}.png`
+    // Imagens fornecidas em public/mock-assets/ — cicladas de forma
+    // determinística por NFT (cada NFT recebe uma arte de base; a galeria
+    // combina variações a partir do mesmo conjunto).
+    const baseImage = NFT_IMAGES[index % NFT_IMAGES.length]
     const imageCount = 3 + (index % 3)
-    const images = Array.from({ length: imageCount }, (_, i) =>
-      i === 0 ? baseImage : `/mock-assets/nfts/${slug}-${i + 1}.png`,
+    const images = Array.from(
+      { length: imageCount },
+      (_, i) => NFT_IMAGES[(index + i) % NFT_IMAGES.length],
     )
 
     return {

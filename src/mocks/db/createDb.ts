@@ -191,6 +191,12 @@ export const createDb = (initialState?: DbState): MockDb => {
   const newToken = (): string =>
     globalThis.crypto?.randomUUID?.() ?? `tok_${Math.random().toString(36).slice(2)}${Date.now()}`
 
+  /** Token com userId embutido (prefixo antes de `~`) + parte aleatória. */
+  const makeToken = (userId: string): string => `${userId}~${newToken()}`
+
+  /** Tokens revogados por logout (em memória; o cliente também descarta o seu). */
+  const revoked = new Set<string>()
+
   const findUserById = (userId: string): User | undefined =>
     state.users.find((u) => u.id === userId)
 
@@ -215,7 +221,7 @@ export const createDb = (initialState?: DbState): MockDb => {
       username: input.username,
       displayName: input.displayName,
     }
-    const token = newToken()
+    const token = makeToken(user.id)
     state = {
       ...state,
       users: [...state.users, user],
@@ -233,13 +239,23 @@ export const createDb = (initialState?: DbState): MockDb => {
     if (!user || !auth || auth.passwordHash !== hashPassword(input.password)) {
       throw apiError('unauthorized', 'E-mail ou senha inválidos')
     }
-    const token = newToken()
+    const token = makeToken(user.id)
     state = { ...state, sessions: { ...state.sessions, [token]: user.id } }
     return { token, user }
   }
 
-  const resolveUserId = (token: string | null): string | null =>
-    token ? (state.sessions[token] ?? null) : null
+  /**
+   * Token "stateless": embute o userId para que a sessão seja recuperável a
+   * partir do token sozinho (sem depender do estado persistido), evitando
+   * corridas com a persistência assíncrona no refresh. O userId só é aceito
+   * se o usuário existir (usuários semeados sempre existem).
+   */
+  const resolveUserId = (token: string | null): string | null => {
+    if (!token || revoked.has(token)) return null
+    const embedded = token.includes('~') ? token.split('~')[0] : null
+    const uid = embedded ?? state.sessions[token] ?? null
+    return uid && findUserById(uid) ? uid : null
+  }
 
   const getSession = (token: string | null): User | undefined => {
     const userId = resolveUserId(token)
@@ -248,6 +264,7 @@ export const createDb = (initialState?: DbState): MockDb => {
 
   const logout = (token: string | null): void => {
     if (!token) return
+    revoked.add(token)
     const { [token]: _removed, ...rest } = state.sessions
     void _removed
     state = { ...state, sessions: rest }
@@ -584,34 +601,50 @@ export const createDb = (initialState?: DbState): MockDb => {
     state = nextState
   }
 
+  /**
+   * Envolve um método que MUTA o estado para auto-persistir no IndexedDB
+   * (best-effort, fire-and-forget) após a mutação — assim carrinho, sessão,
+   * perfil, carteiras e pedidos sobrevivem a refresh sem o chamador precisar
+   * invocar `persist()` manualmente. Métodos de leitura não são envolvidos.
+   */
+  const withPersist = <A extends unknown[], R>(fn: (...args: A) => R): ((...args: A) => R) => {
+    return (...args: A): R => {
+      const result = fn(...args)
+      // Ambientes sem IndexedDB (ex.: testes node sem fake-indexeddb) não
+      // devem falhar por causa da persistência best-effort.
+      void Promise.resolve(saveState(state)).catch(() => {})
+      return result
+    }
+  }
+
   return {
     listNfts,
     getNft,
-    bumpNftVersion,
+    bumpNftVersion: withPersist(bumpNftVersion),
     listFavorites,
-    addFavorite,
-    removeFavorite,
-    register,
-    login,
+    addFavorite: withPersist(addFavorite),
+    removeFavorite: withPersist(removeFavorite),
+    register: withPersist(register),
+    login: withPersist(login),
     getSession,
     resolveUserId,
-    logout,
+    logout: withPersist(logout),
     getProfile,
-    updateProfile,
-    changePassword,
-    setAvatar,
+    updateProfile: withPersist(updateProfile),
+    changePassword: withPersist(changePassword),
+    setAvatar: withPersist(setAvatar),
     listWallets,
-    addWallet,
-    updateWallet,
+    addWallet: withPersist(addWallet),
+    updateWallet: withPersist(updateWallet),
     getCart,
-    addToCart,
-    updateCartItem,
-    removeCartItem,
-    mergeCart,
+    addToCart: withPersist(addToCart),
+    updateCartItem: withPersist(updateCartItem),
+    removeCartItem: withPersist(removeCartItem),
+    mergeCart: withPersist(mergeCart),
     quoteCart,
-    createOrder,
+    createOrder: withPersist(createOrder),
     getOrder,
-    transitionOrder,
+    transitionOrder: withPersist(transitionOrder),
     persist,
     resetScenario,
     hydrate,

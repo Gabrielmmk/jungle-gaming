@@ -54,19 +54,38 @@ export function WalletForm({ initial, pending, onSubmit, onCancel }: WalletFormP
   return (
     <form
       onSubmit={submit}
-      className="flex flex-col gap-4 rounded-lg border border-border bg-surface-card p-4"
+      className="flex flex-col gap-5 rounded-lg border border-border bg-surface-card p-6"
       noValidate
     >
+      <div className="grid gap-5 md:grid-cols-2">
+        <Field
+          label="Apelido da carteira"
+          name="label"
+          value={form.label}
+          onChange={set('label')}
+          error={errors.label}
+          required
+        />
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="wallet-network" className="text-caption font-medium text-text-secondary">
+            Rede<span className="ml-0.5 text-text-accent">*</span>
+          </label>
+          <select
+            id="wallet-network"
+            value={form.network}
+            onChange={(e) => set('network')(e.target.value)}
+            className="rounded-md border border-border-soft bg-ink px-3 py-2 font-mono text-body text-text-primary focus:border-primary focus:outline-none"
+          >
+            {WALLET_NETWORKS.map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
       <Field
-        label="Apelido"
-        name="label"
-        value={form.label}
-        onChange={set('label')}
-        error={errors.label}
-        required
-      />
-      <Field
-        label="Endereço"
+        label="Endereço da carteira"
         name="address"
         value={form.address}
         onChange={set('address')}
@@ -74,23 +93,6 @@ export function WalletForm({ initial, pending, onSubmit, onCancel }: WalletFormP
         required
         placeholder="0x…"
       />
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="wallet-network" className="text-caption font-medium text-text-secondary">
-          Rede
-        </label>
-        <select
-          id="wallet-network"
-          value={form.network}
-          onChange={(e) => set('network')(e.target.value)}
-          className="rounded-md border border-border-soft bg-ink px-3 py-2 font-mono text-body text-text-primary focus:border-primary focus:outline-none"
-        >
-          {WALLET_NETWORKS.map((n) => (
-            <option key={n} value={n}>
-              {n}
-            </option>
-          ))}
-        </select>
-      </div>
       {general && (
         <p role="alert" className="text-caption text-red-400">
           {general}
