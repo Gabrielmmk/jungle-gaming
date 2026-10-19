@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { createRoute } from '@tanstack/react-router'
 import { Route as rootRoute } from '@/routes/__root'
 import { nftSearchSchema } from '@/features/discovery/useNftSearch'
@@ -47,13 +48,22 @@ function IndexPage() {
   // query (não CSS `hidden`) para não montar dois `SearchBox` ao mesmo
   // tempo — teriam `id`/`data-testid` duplicados no DOM.
   const isDesktop = useMediaQuery('(min-width: 768px)')
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
 
   return (
     <div className="flex min-h-screen flex-col bg-ink font-mono text-text-primary">
-      {isDesktop ? <Header search={<SearchBox />} /> : <MobileTopBar />}
+      {isDesktop ? (
+        <Header search={<SearchBox />} />
+      ) : (
+        <MobileTopBar onFilterClick={() => setMobileFiltersOpen(true)} />
+      )}
       <main className="flex-1 pb-20 md:pb-0">
         <Hero />
-        <Discovery mobileCard />
+        <Discovery
+          mobileCard
+          mobileFiltersOpen={mobileFiltersOpen}
+          onMobileFiltersOpenChange={setMobileFiltersOpen}
+        />
         <GenesisBanners />
         <MintingDiary />
       </main>

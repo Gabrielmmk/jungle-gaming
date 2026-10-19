@@ -34,9 +34,6 @@ function ComingSoonLink({ label }: { label: string }) {
       className="cursor-not-allowed text-body-lg text-text-secondary/50"
     >
       {label}
-      <span className="ml-1 text-tiny uppercase tracking-wide text-text-secondary/40">
-        em breve
-      </span>
     </span>
   )
 }
