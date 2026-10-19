@@ -27,33 +27,34 @@ export function FeaturedNft() {
   if (!featured) return null
 
   return (
-    <section className="border-y border-border bg-surface-card px-6 py-12">
-      <div className="mx-auto flex max-w-7xl flex-col items-center gap-8 md:flex-row">
-        <div className="aspect-square w-full max-w-sm overflow-hidden rounded-lg border border-border-soft md:w-80">
-          <img
-            src={featured.image}
-            alt={`${featured.name} — ${featured.collection}`}
-            className="h-full w-full object-cover"
-          />
-        </div>
-
-        <div className="flex flex-col items-start gap-3 text-left">
-          <p className="text-caption uppercase tracking-[0.2em] text-text-accent">
-            NFT em destaque
-          </p>
-          <h2 className="text-heading font-semibold text-text-primary">{featured.name}</h2>
-          <p className="text-body text-text-secondary">{featured.collection}</p>
-          <p className="max-w-xl text-body text-text-secondary">{featured.description}</p>
-          <p className="text-body-lg font-medium text-text-accent">
-            {formatEth(featured.priceEth)}
-          </p>
-          <Button asChild variant="default" size="default" className="mt-2">
-            <Link to="/nft/$id" params={{ id: featured.id }}>
-              Ver detalhes
-            </Link>
-          </Button>
-        </div>
+    <div className="hidden flex-col gap-3 rounded-lg border border-primary bg-surface-card p-4 md:flex">
+      <div>
+        <p className="text-caption font-semibold uppercase tracking-wide text-text-primary">
+          NFT em destaque
+        </p>
+        <p className="text-caption font-medium uppercase tracking-[0.15em] text-text-accent">
+          Oferta limitada
+        </p>
       </div>
-    </section>
+
+      <div className="aspect-square w-full overflow-hidden rounded-md border border-border-soft">
+        <img
+          src={featured.image}
+          alt={`${featured.name} — ${featured.collection}`}
+          className="h-full w-full object-cover"
+        />
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <h3 className="truncate text-body-lg font-medium text-text-primary">{featured.name}</h3>
+        <p className="text-body font-medium text-text-accent">{formatEth(featured.priceEth)}</p>
+      </div>
+
+      <Button asChild variant="outline" size="sm">
+        <Link to="/nft/$id" params={{ id: featured.id }}>
+          Ver detalhes
+        </Link>
+      </Button>
+    </div>
   )
 }

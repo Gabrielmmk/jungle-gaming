@@ -14,6 +14,7 @@ import { NftGallery } from '@/features/nft-detail/NftGallery'
 import { EditionQuantity } from '@/features/nft-detail/EditionQuantity'
 import { FavoriteButton } from '@/features/nft-detail/FavoriteButton'
 import { useCart } from '@/features/cart/useCart'
+import { useDocumentTitle } from '@/shared/seo/useDocumentTitle'
 import { RelatedCollection } from '@/features/nft-detail/RelatedCollection'
 import { useNftEvents } from '@/features/realtime/useNftEvents'
 import { formatEth } from '@/shared/eth/money'
@@ -34,6 +35,7 @@ export const Route = createRoute({
 function NftDetailPage() {
   const { id } = Route.useParams()
   const { nft, isLoading, isError, notFound, refetch } = useNft(id)
+  useDocumentTitle(nft ? `${nft.name} — ${nft.collection}` : null)
   const { add: addToCart } = useCart()
   const [quantity, setQuantity] = useState(1)
   const [buyFeedback, setBuyFeedback] = useState(false)

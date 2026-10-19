@@ -1,4 +1,5 @@
 import { CATALOG_ANCHOR_ID } from '@/components/home/Hero'
+import { FeaturedNft } from '@/components/home/FeaturedNft'
 import { NftGrid } from '@/components/nft/NftGrid'
 import { EmptyState } from '@/components/feedback/EmptyState'
 import { ErrorState } from '@/components/feedback/ErrorState'
@@ -58,7 +59,10 @@ export function Discovery() {
       )}
 
       <div className="flex flex-col gap-8 md:flex-row">
-        <FiltersPanel facets={facets} />
+        <div className="flex flex-col gap-6 md:w-64 md:shrink-0">
+          <FiltersPanel facets={facets} />
+          <FeaturedNft />
+        </div>
 
         <div className="flex-1">
           <div className="mb-6 flex flex-col gap-4 border-b border-border-soft pb-4 sm:flex-row sm:items-center sm:justify-between">

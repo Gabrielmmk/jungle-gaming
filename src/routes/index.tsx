@@ -4,7 +4,6 @@ import { nftSearchSchema } from '@/features/discovery/useNftSearch'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { Hero } from '@/components/home/Hero'
-import { FeaturedNft } from '@/components/home/FeaturedNft'
 import { GenesisBanners } from '@/components/home/GenesisBanners'
 import { MintingDiary } from '@/components/home/MintingDiary'
 import { Discovery } from '@/features/discovery/Discovery'
@@ -22,7 +21,8 @@ import { useNftEvents } from '@/features/realtime/useNftEvents'
  *
  * Composição da tela de Início (Chunk 3): Header (com `SearchBox` no
  * slot de busca) + Hero + catálogo (`Discovery`, com filtros/ordenação/
- * paginação/estados) + banner de destaque + editorial + Footer.
+ * paginação/estados e o NFT em destaque na coluna lateral) + editorial +
+ * Footer.
  */
 export const Route = createRoute({
   getParentRoute: () => rootRoute,
@@ -44,7 +44,6 @@ function IndexPage() {
       <main className="flex-1">
         <Hero />
         <Discovery />
-        <FeaturedNft />
         <GenesisBanners />
         <MintingDiary />
       </main>
