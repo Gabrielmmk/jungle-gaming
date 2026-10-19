@@ -55,15 +55,18 @@ A aplicação sobe em `http://localhost:5173` com os mocks ativos.
 
 ## Comandos
 
-| Comando                         | Ação                      |
-| ------------------------------- | ------------------------- |
-| `pnpm dev`                      | Desenvolvimento com mocks |
-| `pnpm build`                    | Build de produção         |
-| `pnpm preview`                  | Preview do build          |
-| `pnpm typecheck`                | Checagem de tipos (`tsc`) |
-| `pnpm lint`                     | ESLint                    |
-| `pnpm format:check`             | Prettier (check)          |
-| `pnpm test` / `pnpm test --run` | Testes Vitest             |
+| Comando                         | Ação                                                           |
+| ------------------------------- | -------------------------------------------------------------- |
+| `pnpm dev`                      | Desenvolvimento com mocks                                      |
+| `pnpm build`                    | Build de produção                                              |
+| `pnpm preview`                  | Preview do build                                               |
+| `pnpm typecheck`                | Checagem de tipos (`tsc`)                                      |
+| `pnpm lint`                     | ESLint                                                         |
+| `pnpm format:check`             | Prettier (check)                                               |
+| `pnpm test` / `pnpm test --run` | Testes Vitest (unit)                                           |
+| `pnpm test:e2e`                 | Testes E2E Playwright (build+preview, Chromium desktop+mobile) |
+| `pnpm test:e2e:ui`              | Playwright em modo UI                                          |
+| `pnpm test:e2e:update`          | Regenerar baselines de regressão visual                        |
 
 ## Mock backend: cenários e reset
 

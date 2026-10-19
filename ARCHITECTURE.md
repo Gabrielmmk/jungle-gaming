@@ -332,9 +332,25 @@ implícito, nunca só cor), que se limpa sozinho após alguns segundos.
 
 ## Desvios em relação ao Figma
 
-Nenhum desvio relevante na Camada 0 (a página de prova de catálogo é mínima e será
-substituída pela tela de Início na Camada 2). Na Camada 2 (Descoberta), nenhum
-desvio relevante de asset/paleta/tipografia foi necessário — ver detalhes de a11y
-e decisões específicas da camada na seção "Descoberta (Camada 2)" acima. Desvios e
-substituições de asset futuros serão registrados aqui conforme as telas forem
-implementadas.
+- **Paleta, tipografia e composição** seguem os tokens extraídos do Figma — sem
+  desvios relevantes.
+- **Assets de arte dos NFTs:** os arquivos de imagem ficam em `public/mock-assets/`
+  e são referenciados pelo seed (`src/mocks/fixtures/seed.ts`), ciclados de forma
+  determinística entre os NFTs (cada NFT recebe uma arte de base; a galeria combina
+  variações do mesmo conjunto). Para trocar/ampliar o conjunto, basta adicionar
+  arquivos à pasta e ajustar a lista `NFT_IMAGES` no seed. O hero da Início usa uma
+  dessas imagens à direita (layout de 2 colunas, fiel ao Figma).
+- **Carteiras:** o formulário do Figma tem campos adicionais presentacionais (nome
+  do perfil, código de indicação, ENS secundário). A tela implementa os campos
+  **funcionais** (apelido, endereço, rede) em layout de 2 colunas equivalente;
+  campos puramente decorativos foram omitidos (YAGNI) — não há requisito funcional
+  para eles.
+
+## Regressão visual (Playwright, §9)
+
+Baselines versionadas em `e2e/visual.spec.ts-snapshots/` para Início, Detalhe,
+Carrinho e Pagamento, nos projetos **desktop (1440)** e **mobile (390)**. As
+**imagens são mascaradas** nas capturas (`mask: [page.locator('img')]`): a regressão
+foca em layout, estrutura, espaçamento, cores e tipografia — os binários de arte não
+entram nas baselines. Dados determinísticos vêm do seed. Para regenerar após mudanças
+intencionais de UI: `pnpm test:e2e:update`.
