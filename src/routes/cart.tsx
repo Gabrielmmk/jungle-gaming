@@ -14,6 +14,7 @@ import { CartItemRow } from '@/features/cart/CartItemRow'
 import { CartSummary } from '@/features/cart/CartSummary'
 import { MobileCartItemCard } from '@/features/cart/MobileCartItemCard'
 import { formatEth } from '@/shared/eth/money'
+import { useIsMobile } from '@/shared/responsive/useIsMobile'
 
 export const Route = createRoute({
   getParentRoute: () => rootRoute,
@@ -26,17 +27,18 @@ function CartPage() {
   // mudanças de preço/disponibilidade recebidas enquanto o carrinho está
   // aberto reinvalidam a cotação (ver useNftEvents → invalida ['quote']).
   useNftEvents()
+  const isMobile = useIsMobile()
   const cart = useCart()
   const router = useRouter()
   const [promoCode, setPromoCode] = useState('')
   const mutating = cart.update.isPending || cart.remove.isPending
   const empty = !cart.quote || cart.quote.items.length === 0
 
-  return (
-    <>
-      {/* Tela cheia dedicada no mobile: topo com voltar, cards de item em
-          vez de tabela, resumo inline (ver mesmo padrão em /nft/$id). */}
-      <div className="flex min-h-screen flex-col bg-ink font-mono text-text-primary md:hidden">
+  if (isMobile) {
+    // Tela cheia dedicada: topo com voltar, cards de item em vez de
+    // tabela, resumo inline (ver mesmo padrão em /nft/$id).
+    return (
+      <div className="flex min-h-screen flex-col bg-ink font-mono text-text-primary">
         <div className="flex items-center gap-3 px-4 pt-4">
           <button
             type="button"
@@ -162,77 +164,79 @@ function CartPage() {
           </main>
         )}
       </div>
+    )
+  }
 
-      <div className="hidden min-h-screen flex-col bg-ink font-mono text-text-primary md:flex">
-        <Header />
-        <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-6 py-10">
-          <nav aria-label="Trilha" className="text-caption text-text-secondary">
-            <Link to="/" className="hover:text-text-accent">
-              Início
-            </Link>{' '}
-            / Carrinho
-          </nav>
+  return (
+    <div className="flex min-h-screen flex-col bg-ink font-mono text-text-primary">
+      <Header />
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-6 py-10">
+        <nav aria-label="Trilha" className="text-caption text-text-secondary">
+          <Link to="/" className="hover:text-text-accent">
+            Início
+          </Link>{' '}
+          / Carrinho
+        </nav>
 
-          {cart.isError && (
-            <ErrorState
-              title="Não foi possível carregar o carrinho"
-              description="Ocorreu um erro ao buscar o carrinho. Tente novamente."
-              onRetry={cart.refetch}
-            />
-          )}
+        {cart.isError && (
+          <ErrorState
+            title="Não foi possível carregar o carrinho"
+            description="Ocorreu um erro ao buscar o carrinho. Tente novamente."
+            onRetry={cart.refetch}
+          />
+        )}
 
-          {cart.isLoading && (
-            <div className="flex flex-col gap-3" aria-hidden>
-              {[0, 1, 2].map((i) => (
-                <Skeleton key={i} className="h-16 w-full" />
-              ))}
-            </div>
-          )}
+        {cart.isLoading && (
+          <div className="flex flex-col gap-3" aria-hidden>
+            {[0, 1, 2].map((i) => (
+              <Skeleton key={i} className="h-16 w-full" />
+            ))}
+          </div>
+        )}
 
-          {!cart.isLoading && !cart.isError && (
-            <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
-              <section aria-label="Itens do carrinho">
-                {cart.quote && cart.quote.items.length > 0 ? (
-                  <>
-                    <div className="hidden grid-cols-[2fr_1fr_auto_1fr_auto] gap-4 border-b border-border px-0 pb-2 text-caption uppercase tracking-wide text-text-secondary md:grid">
-                      <span>NFTs</span>
-                      <span>Preço</span>
-                      <span>Edições</span>
-                      <span>Total</span>
-                      <span className="sr-only">Ações</span>
-                    </div>
-                    {cart.quote.items.map((item) => (
-                      <CartItemRow
-                        key={item.nft.id}
-                        item={item}
-                        disabled={mutating}
-                        onUpdateQty={(qty) => cart.update.mutate({ nftId: item.nft.id, qty })}
-                        onRemove={() => cart.remove.mutate(item.nft.id)}
-                      />
-                    ))}
-                  </>
-                ) : (
-                  <div className="flex flex-col items-center gap-4 rounded-lg border border-border bg-surface-card py-16 text-center">
-                    <ShoppingCart className="h-10 w-10 text-text-secondary" aria-hidden />
-                    <p className="text-body text-text-secondary">Seu carrinho está vazio.</p>
-                    <Link to="/" className="text-body text-primary hover:text-text-accent">
-                      Explorar NFTs
-                    </Link>
+        {!cart.isLoading && !cart.isError && (
+          <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
+            <section aria-label="Itens do carrinho">
+              {cart.quote && cart.quote.items.length > 0 ? (
+                <>
+                  <div className="hidden grid-cols-[2fr_1fr_auto_1fr_auto] gap-4 border-b border-border px-0 pb-2 text-caption uppercase tracking-wide text-text-secondary md:grid">
+                    <span>NFTs</span>
+                    <span>Preço</span>
+                    <span>Edições</span>
+                    <span>Total</span>
+                    <span className="sr-only">Ações</span>
                   </div>
-                )}
-              </section>
+                  {cart.quote.items.map((item) => (
+                    <CartItemRow
+                      key={item.nft.id}
+                      item={item}
+                      disabled={mutating}
+                      onUpdateQty={(qty) => cart.update.mutate({ nftId: item.nft.id, qty })}
+                      onRemove={() => cart.remove.mutate(item.nft.id)}
+                    />
+                  ))}
+                </>
+              ) : (
+                <div className="flex flex-col items-center gap-4 rounded-lg border border-border bg-surface-card py-16 text-center">
+                  <ShoppingCart className="h-10 w-10 text-text-secondary" aria-hidden />
+                  <p className="text-body text-text-secondary">Seu carrinho está vazio.</p>
+                  <Link to="/" className="text-body text-primary hover:text-text-accent">
+                    Explorar NFTs
+                  </Link>
+                </div>
+              )}
+            </section>
 
-              <CartSummary
-                quote={cart.quote}
-                onApplyCoupon={cart.applyCoupon}
-                onRemoveCoupon={cart.removeCoupon}
-              />
-            </div>
-          )}
-        </main>
-        <Footer />
-      </div>
-    </>
+            <CartSummary
+              quote={cart.quote}
+              onApplyCoupon={cart.applyCoupon}
+              onRemoveCoupon={cart.removeCoupon}
+            />
+          </div>
+        )}
+      </main>
+      <Footer />
+    </div>
   )
 }
 

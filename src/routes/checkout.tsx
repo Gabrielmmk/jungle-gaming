@@ -25,6 +25,7 @@ import { useNftEvents } from '@/features/realtime/useNftEvents'
 import { WALLET_NETWORKS } from '@/contracts/wallet'
 import { collectorSchema } from '@/contracts/order'
 import { ZodError } from 'zod'
+import { useIsMobile } from '@/shared/responsive/useIsMobile'
 
 export const Route = createRoute({
   getParentRoute: () => rootRoute,
@@ -47,6 +48,7 @@ const PROVIDER_BADGES: Record<
 
 function CheckoutPage() {
   useNftEvents() // revalida a cotação se preço/disponibilidade mudarem durante o checkout
+  const isMobile = useIsMobile()
   const navigate = useNavigate()
   const router = useRouter()
   const { user } = useSession()
@@ -172,12 +174,12 @@ function CheckoutPage() {
     }
   }
 
-  return (
-    <>
-      {/* Tela cheia dedicada no mobile: "Pagamento com carteira" — sem o
-          formulário de perfil do colecionador (dados já vêm da sessão
-          autenticada), foco em escolher/confirmar a carteira. */}
-      <div className="flex min-h-screen flex-col bg-ink font-mono text-text-primary md:hidden">
+  if (isMobile) {
+    // Tela cheia dedicada: "Pagamento com carteira" — sem o formulário de
+    // perfil do colecionador (dados já vêm da sessão autenticada), foco em
+    // escolher/confirmar a carteira.
+    return (
+      <div className="flex min-h-screen flex-col bg-ink font-mono text-text-primary">
         <div className="flex items-center gap-3 px-4 pt-4">
           <button
             type="button"

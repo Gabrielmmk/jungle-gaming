@@ -20,6 +20,7 @@ import { useDocumentTitle } from '@/shared/seo/useDocumentTitle'
 import { RelatedCollection } from '@/features/nft-detail/RelatedCollection'
 import { useNftEvents } from '@/features/realtime/useNftEvents'
 import { formatEth } from '@/shared/eth/money'
+import { useIsMobile } from '@/shared/responsive/useIsMobile'
 
 const UPDATED_BADGE_TIMEOUT_MS = 4000
 
@@ -35,6 +36,7 @@ export const Route = createRoute({
 })
 
 function NftDetailPage() {
+  const isMobile = useIsMobile()
   const { id } = Route.useParams()
   const { nft, isLoading, isError, notFound, refetch } = useNft(id)
   useDocumentTitle(nft ? `${nft.name} — ${nft.collection}` : null)
@@ -123,9 +125,9 @@ function NftDetailPage() {
   const favorited = isFavorite(nft.id)
   const tokenId = nft.name.match(/#\d+/)?.[0] ?? nft.id
 
-  return (
-    <>
-      <div className="md:hidden">
+  if (isMobile) {
+    return (
+      <>
         <div className="relative mx-auto max-w-md px-4 pt-4">
           <div className="mb-4 flex items-center justify-between">
             <button
@@ -243,12 +245,14 @@ function NftDetailPage() {
           }}
           description="Entre ou crie sua conta para salvar NFTs nos favoritos."
         />
-      </div>
+      </>
+    )
+  }
 
-      <div className="hidden md:block">
-        <Header />
-      </div>
-      <main className="mx-auto hidden max-w-7xl px-6 py-10 md:block">
+  return (
+    <>
+      <Header />
+      <main className="mx-auto max-w-7xl px-6 py-10">
         <nav aria-label="Breadcrumb" className="mb-6 text-body text-text-secondary">
           <Link to="/" className="hover:text-text-accent">
             Início
@@ -433,9 +437,7 @@ function NftDetailPage() {
           <RelatedCollection collection={nft.collection} excludeId={nft.id} />
         </div>
       </main>
-      <div className="hidden md:block">
-        <Footer />
-      </div>
+      <Footer />
     </>
   )
 }
