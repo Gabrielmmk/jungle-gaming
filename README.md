@@ -4,11 +4,10 @@ Marketplace de NFTs (desafio frontend) em React + TypeScript, com dados totalmen
 simulados (REST + tempo real) na camada de rede. Estética **GreenMint** (dark/earthy,
 tipografia monoespaçada), fiel ao Figma.
 
-> **Status:** Concluídos os fluxos de Fundação & Mock Backend, Descoberta
-> (Início + Detalhes), Sessão & Conta, Carrinho e **Checkout/Confirmação** (pedido
-> idempotente, revalidação, estados pendente/confirmado/recusado, recibo snapshot).
-> Pendentes: Testes E2E (Playwright), Performance (Lighthouse) e Deploy — além do
-> passe de fidelidade visual. Veja `ARCHITECTURE.md` para a arquitetura.
+> **Status:** Fluxos completos (Fundação & Mock Backend, Descoberta, Sessão & Conta,
+> Carrinho, Checkout/Confirmação) + **testes E2E Playwright** (fluxos + regressão
+> visual, Chromium desktop/mobile). Pendentes: auditoria Lighthouse e Deploy; o passe
+> de fidelidade visual segue em andamento. Veja `ARCHITECTURE.md` para a arquitetura.
 
 **Cupons de teste (carrinho):** `LAUNCH10` (-10%) e `WELCOME5` (-5%) válidos;
 `EXPIRED` (expirado) e qualquer outro código são rejeitados com mensagem.
