@@ -59,6 +59,7 @@
     "fake-indexeddb": "^6.2.6",
     "globals": "^17.12.0",
     "jsdom": "^25.0.1",
+    "lighthouse": "^13.5.0",
     "msw": "^2.15.0",
     "postcss": "^8.5.30",
     "prettier": "^3.9.10",

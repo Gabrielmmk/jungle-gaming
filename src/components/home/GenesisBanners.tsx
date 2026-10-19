@@ -35,7 +35,7 @@ export function GenesisBanners() {
           >
             <img src={banner.image} alt="" className="h-24 w-24 shrink-0 rounded-md object-cover" />
             <div className="flex min-w-0 flex-col gap-2">
-              <h3 className="text-body-lg font-medium text-text-primary">{banner.title}</h3>
+              <p className="text-body-lg font-medium text-text-primary">{banner.title}</p>
               <p className="text-caption text-text-secondary">{banner.text}</p>
               <button
                 type="button"

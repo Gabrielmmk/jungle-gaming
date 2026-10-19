@@ -65,6 +65,7 @@ export function Discovery() {
         </div>
 
         <div className="flex-1">
+          <h2 className="sr-only">Catálogo de NFTs</h2>
           <div className="mb-6 flex flex-col gap-4 border-b border-border-soft pb-4 sm:flex-row sm:items-center sm:justify-between">
             <div
               role="tablist"

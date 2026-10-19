@@ -11,6 +11,11 @@ const viteConfig = defineConfig({
       '@': path.resolve(import.meta.dirname, './src'),
     },
   },
+  // Sourcemaps no build de produção — o Lighthouse (Best Practices) espera
+  // source maps válidos para o JS first-party.
+  build: {
+    sourcemap: true,
+  },
 })
 
 const vitestConfig = defineVitestConfig({

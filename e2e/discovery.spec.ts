@@ -4,12 +4,14 @@ import { gotoHome } from './helpers'
 test.describe('Descoberta', () => {
   test('busca compõe a URL e sobrevive a refresh e histórico', async ({ page }) => {
     await gotoHome(page)
+    // A busca no header é um ícone que expande o campo.
+    await page.getByRole('button', { name: 'Abrir busca' }).click()
     await page.getByTestId('search-input').fill('ape')
     await expect(page).toHaveURL(/q=ape/)
 
-    // sobrevive a refresh
+    // o estado vive na URL e sobrevive ao refresh
     await page.reload()
-    await expect(page.getByTestId('search-input')).toHaveValue('ape')
+    await expect(page).toHaveURL(/q=ape/)
 
     // histórico: voltar remove o filtro
     await page.goBack()

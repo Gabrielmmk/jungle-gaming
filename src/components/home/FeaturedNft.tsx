@@ -46,7 +46,7 @@ export function FeaturedNft() {
       </div>
 
       <div className="flex flex-col gap-1">
-        <h3 className="truncate text-body-lg font-medium text-text-primary">{featured.name}</h3>
+        <p className="truncate text-body-lg font-medium text-text-primary">{featured.name}</p>
         <p className="text-body font-medium text-text-accent">{formatEth(featured.priceEth)}</p>
       </div>
 
