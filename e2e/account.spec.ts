@@ -21,10 +21,12 @@ test.describe('Conta e sessão', () => {
     // já carrega em modo "registro" (defaultMode="register"); não depende
     // da aba Entrar/Criar conta, que só existe no variant "dialog" (desktop)
     await page.goto('/register')
-    await page.getByLabel('Nome de usuário').fill(username)
-    await page.getByLabel('E-mail').fill(`novo${uniq}@x.com`)
-    await page.getByLabel('Senha', { exact: true }).fill('segredo123')
-    await page.getByLabel('Confirmar senha').fill('segredo123')
+    // Locators por `name` (não por label): o botão de mostrar/ocultar senha
+    // tem aria-label "Mostrar/Ocultar senha", que colide com getByLabel('Senha').
+    await page.locator('input[name="username"]').fill(username)
+    await page.locator('input[name="email"]').fill(`novo${uniq}@x.com`)
+    await page.locator('input[name="password"]').fill('segredo123')
+    await page.locator('input[name="confirmPassword"]').fill('segredo123')
     await page.getByTestId('auth-submit').click()
     // rota com header fixo — a Início no mobile não tem o header padrão
     await page.goto('/profile')
@@ -39,8 +41,8 @@ test.describe('Conta e sessão', () => {
 
   test('credenciais inválidas mostram erro', async ({ page }) => {
     await page.goto('/login')
-    await page.getByLabel('E-mail').fill(SEED_USER.email)
-    await page.getByLabel('Senha').fill('errada')
+    await page.locator('input[name="email"]').fill(SEED_USER.email)
+    await page.locator('input[name="password"]').fill('errada')
     await page.getByTestId('auth-submit').click()
     await expect(page.getByRole('alert')).toBeVisible()
   })

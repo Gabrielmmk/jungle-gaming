@@ -31,7 +31,7 @@ function ComingSoonLink({ label }: { label: string }) {
     <span
       aria-disabled="true"
       title={`${label} — em breve`}
-      className="cursor-not-allowed text-body-lg text-text-secondary/50"
+      className="cursor-not-allowed border-b-2 border-transparent pb-2.5 text-body-lg text-text-secondary/50"
     >
       {label}
     </span>

@@ -323,358 +323,353 @@ function CheckoutPage() {
           </main>
         )}
       </div>
+    )
+  }
 
-      <div className="hidden min-h-screen flex-col bg-ink font-mono text-text-primary md:flex">
-        <Header />
-        <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-10">
-          <nav aria-label="Breadcrumb" className="mb-6 text-body text-text-secondary">
-            <Link to="/" className="hover:text-text-accent">
-              Início
-            </Link>
-            {' / '}
-            <Link to="/mercado" className="hover:text-text-accent">
-              Mercado
-            </Link>
-            {' / '}
-            <span className="text-text-primary">Pagamento</span>
-          </nav>
+  return (
+    <div className="flex min-h-screen flex-col bg-ink font-mono text-text-primary">
+      <Header />
+      <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-10">
+        <nav aria-label="Breadcrumb" className="mb-6 text-body text-text-secondary">
+          <Link to="/" className="hover:text-text-accent">
+            Início
+          </Link>
+          {' / '}
+          <Link to="/mercado" className="hover:text-text-accent">
+            Mercado
+          </Link>
+          {' / '}
+          <span className="text-text-primary">Pagamento</span>
+        </nav>
 
-          <div className="grid gap-10 lg:grid-cols-[1fr_380px]">
-            <section aria-label="Dados do colecionador" className="flex flex-col gap-6">
-              <h1 className="text-body-lg font-bold text-text-primary">Perfil do colecionador</h1>
+        <div className="grid gap-10 lg:grid-cols-[1fr_380px]">
+          <section aria-label="Dados do colecionador" className="flex flex-col gap-6">
+            <h1 className="text-body-lg font-bold text-text-primary">Perfil do colecionador</h1>
 
-              <div className="grid gap-5 md:grid-cols-2">
-                <Field
-                  label="Nome de exibição"
-                  name="displayName"
-                  value={collector.displayName}
-                  onChange={(v) => setCollector((c) => ({ ...c, displayName: v }))}
-                  error={errors.displayName}
-                  required
-                />
-                <Field
-                  label="Nome de usuário"
-                  name="username"
-                  value={username}
-                  onChange={setUsername}
-                  required
-                />
+            <div className="grid gap-5 md:grid-cols-2">
+              <Field
+                label="Nome de exibição"
+                name="displayName"
+                value={collector.displayName}
+                onChange={(v) => setCollector((c) => ({ ...c, displayName: v }))}
+                error={errors.displayName}
+                required
+              />
+              <Field
+                label="Nome de usuário"
+                name="username"
+                value={username}
+                onChange={setUsername}
+                required
+              />
 
-                <SelectField
-                  label="Rede"
-                  placeholder="Selecione uma rede"
-                  value={profileNetwork}
-                  onChange={setProfileNetwork}
-                  options={WALLET_NETWORKS as unknown as string[]}
-                  required
-                />
-                <Field
-                  label="Nome do perfil"
-                  name="profileName"
-                  value={profileName}
-                  onChange={setProfileName}
-                  required
-                />
+              <SelectField
+                label="Rede"
+                placeholder="Selecione uma rede"
+                value={profileNetwork}
+                onChange={setProfileNetwork}
+                options={WALLET_NETWORKS as unknown as string[]}
+                required
+              />
+              <Field
+                label="Nome do perfil"
+                name="profileName"
+                value={profileName}
+                onChange={setProfileName}
+                required
+              />
 
-                <Field
-                  label="Endereço da carteira"
-                  name="walletAddress"
-                  value={walletAddress}
-                  onChange={setWalletAddress}
-                  placeholder="Endereço 0x da carteira"
-                  required
-                />
-                <Field
-                  label="ENS ou carteira secundária (opcional)"
-                  name="secondaryWallet"
-                  value={secondaryWallet}
-                  onChange={setSecondaryWallet}
-                />
+              <Field
+                label="Endereço da carteira"
+                name="walletAddress"
+                value={walletAddress}
+                onChange={setWalletAddress}
+                placeholder="Endereço 0x da carteira"
+                required
+              />
+              <Field
+                label="ENS ou carteira secundária (opcional)"
+                name="secondaryWallet"
+                value={secondaryWallet}
+                onChange={setSecondaryWallet}
+              />
 
-                <SelectField
-                  label="Tipo de carteira"
-                  placeholder="Selecione uma carteira"
-                  value={walletType}
-                  onChange={setWalletType}
-                  options={WALLET_TYPES as unknown as string[]}
-                  required
-                />
-                <Field
-                  label="Código de indicação"
-                  name="referralCode"
-                  value={referralCode}
-                  onChange={setReferralCode}
-                  required
-                />
+              <SelectField
+                label="Tipo de carteira"
+                placeholder="Selecione uma carteira"
+                value={walletType}
+                onChange={setWalletType}
+                options={WALLET_TYPES as unknown as string[]}
+                required
+              />
+              <Field
+                label="Código de indicação"
+                name="referralCode"
+                value={referralCode}
+                onChange={setReferralCode}
+                required
+              />
 
-                <Field
-                  label="E-mail"
-                  name="email"
-                  type="email"
-                  value={collector.email}
-                  onChange={(v) => setCollector((c) => ({ ...c, email: v }))}
-                  error={errors.email}
-                  required
-                />
-                <SelectField
-                  label="Nome ENS"
-                  placeholder=".eth"
-                  value={ensSuffix}
-                  onChange={setEnsSuffix}
-                  options={['.eth']}
-                  required
-                />
-              </div>
+              <Field
+                label="E-mail"
+                name="email"
+                type="email"
+                value={collector.email}
+                onChange={(v) => setCollector((c) => ({ ...c, email: v }))}
+                error={errors.email}
+                required
+              />
+              <SelectField
+                label="Nome ENS"
+                placeholder=".eth"
+                value={ensSuffix}
+                onChange={setEnsSuffix}
+                options={['.eth']}
+                required
+              />
+            </div>
 
-              <label className="flex w-fit items-center gap-2 text-body text-text-primary">
-                <input
-                  type="checkbox"
-                  checked={useOtherWallet}
-                  onChange={(e) => setUseOtherWallet(e.target.checked)}
-                  className="size-4 rounded-full accent-primary"
-                />
-                Usar outra carteira?
+            <label className="flex w-fit items-center gap-2 text-body text-text-primary">
+              <input
+                type="checkbox"
+                checked={useOtherWallet}
+                onChange={(e) => setUseOtherWallet(e.target.checked)}
+                className="size-4 rounded-full accent-primary"
+              />
+              Usar outra carteira?
+            </label>
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="note" className="text-caption font-medium text-text-secondary">
+                Observação do colecionador (opcional)
               </label>
+              <textarea
+                id="note"
+                name="note"
+                rows={6}
+                value={collector.note}
+                onChange={(e) => setCollector((c) => ({ ...c, note: e.target.value }))}
+                className="w-full rounded-md border border-border-soft bg-ink px-3 py-2 font-mono text-body text-text-primary placeholder:text-text-secondary/60 focus:border-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              />
+            </div>
+          </section>
 
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="note" className="text-caption font-medium text-text-secondary">
-                  Observação do colecionador (opcional)
-                </label>
-                <textarea
-                  id="note"
-                  name="note"
-                  rows={6}
-                  value={collector.note}
-                  onChange={(e) => setCollector((c) => ({ ...c, note: e.target.value }))}
-                  className="w-full rounded-md border border-border-soft bg-ink px-3 py-2 font-mono text-body text-text-primary placeholder:text-text-secondary/60 focus:border-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                />
-              </div>
-            </section>
+          <aside className="flex h-fit flex-col gap-4 rounded-lg border border-border bg-surface-card p-5">
+            <div className="flex items-center justify-between border-b border-border-soft pb-3">
+              <h2 className="text-body-lg text-text-primary">Seus NFTs</h2>
+              <span className="text-caption uppercase tracking-wide text-text-secondary">
+                Subtotal
+              </span>
+            </div>
 
-            <aside className="flex h-fit flex-col gap-4 rounded-lg border border-border bg-surface-card p-5">
-              <div className="flex items-center justify-between border-b border-border-soft pb-3">
-                <h2 className="text-body-lg text-text-primary">Seus NFTs</h2>
-                <span className="text-caption uppercase tracking-wide text-text-secondary">
-                  Subtotal
-                </span>
-              </div>
-
-              {empty ? (
-                <p className="text-body text-text-secondary">
-                  Carrinho vazio.{' '}
-                  <Link to="/" className="text-text-accent hover:underline">
-                    Explorar
-                  </Link>
-                </p>
-              ) : (
-                <>
-                  <ul className="flex flex-col gap-3 border-b border-border-soft pb-3">
-                    {quote.items.map((it) => (
-                      <li key={it.nft.id} className="flex items-center gap-3">
-                        <img
-                          src={it.nft.image}
-                          alt=""
-                          className="size-12 shrink-0 rounded-md object-cover"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-body text-text-primary">{it.nft.name}</p>
-                          <p className="text-caption text-text-secondary">
-                            ID do token: {it.nft.name.match(/#\d+/)?.[0] ?? it.nft.id}
-                          </p>
-                        </div>
-                        <span className="shrink-0 text-caption text-text-secondary">
-                          (x{it.qty})
-                        </span>
-                        <span className="shrink-0 text-body font-bold text-text-accent">
-                          {formatEth(it.lineTotalEth)}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  {couponOpen ? (
-                    <div className="flex flex-col gap-2">
-                      <div className="flex gap-2">
-                        <label htmlFor="coupon" className="sr-only">
-                          Código promocional
-                        </label>
-                        <input
-                          id="coupon"
-                          value={couponCode}
-                          onChange={(e) => setCouponCode(e.target.value)}
-                          placeholder="Digite o código promocional"
-                          className="min-w-0 flex-1 rounded-md border border-border-soft bg-ink px-3 py-2 text-caption text-text-primary placeholder:text-text-secondary/60 focus:border-primary focus:outline-none"
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => couponCode.trim() && cart.applyCoupon(couponCode.trim())}
-                        >
-                          Aplicar
-                        </Button>
-                      </div>
-                      {quote.coupon?.applied && (
-                        <p role="status" className="text-caption text-text-accent">
-                          Cupom {quote.coupon.code} aplicado (-{quote.coupon.percentOff}%).{' '}
-                          <button type="button" onClick={cart.removeCoupon} className="underline">
-                            remover
-                          </button>
-                        </p>
-                      )}
-                      {quote.coupon && !quote.coupon.applied && (
-                        <p role="status" className="text-caption text-red-400">
-                          Cupom {quote.coupon.reason === 'expired' ? 'expirado' : 'inválido'}.
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setCouponOpen(true)}
-                      className="text-center text-caption text-text-accent hover:underline"
-                    >
-                      Tem um código promocional? Aplique aqui
-                    </button>
-                  )}
-
-                  <dl className="flex flex-col gap-1.5 text-body">
-                    <Line label="Subtotal" value={formatEth(quote.subtotalEth)} />
-                    <Line
-                      label="Desconto do lançamento"
-                      value={
-                        Number(quote.discountEth) > 0
-                          ? `(-) ${formatEth(quote.discountEth)}`
-                          : '(-) 00.00'
-                      }
-                      accent={Number(quote.discountEth) > 0}
-                    />
-                    <Line
-                      label="Taxa de rede"
-                      value={formatEth(quote.networkFeeEth)}
-                      hint="Taxa estimada"
-                    />
-                  </dl>
-
-                  <div className="flex items-center justify-between border-t border-border-soft pt-3">
-                    <span className="text-body-lg font-bold text-text-primary">Total</span>
-                    <span
-                      className="text-body-lg font-bold text-primary"
-                      data-testid="checkout-total"
-                    >
-                      {formatEth(quote.totalEth)}
-                    </span>
-                  </div>
-
-                  <fieldset className="flex flex-col gap-3">
-                    <legend className="mb-1 w-full text-center text-body-lg text-text-primary">
-                      Carteira e rede
-                    </legend>
-
-                    <WalletOption
-                      label="WalletConnect"
-                      value="WalletConnect"
-                      checked={walletChoice === 'WalletConnect'}
-                      onSelect={() => selectWallet('WalletConnect')}
-                      badges
-                    />
-                    {(wallets ?? []).map((w) => (
-                      <WalletOption
-                        key={w.id}
-                        label={`${w.label} · ${w.network}`}
-                        value={w.label}
-                        checked={walletChoice === w.label}
-                        onSelect={() => selectWallet(w.label)}
+            {empty ? (
+              <p className="text-body text-text-secondary">
+                Carrinho vazio.{' '}
+                <Link to="/" className="text-text-accent hover:underline">
+                  Explorar
+                </Link>
+              </p>
+            ) : (
+              <>
+                <ul className="flex flex-col gap-3 border-b border-border-soft pb-3">
+                  {quote.items.map((it) => (
+                    <li key={it.nft.id} className="flex items-center gap-3">
+                      <img
+                        src={it.nft.image}
+                        alt=""
+                        className="size-12 shrink-0 rounded-md object-cover"
                       />
-                    ))}
-                    <WalletOption
-                      label="MetaMask"
-                      value="MetaMask"
-                      checked={walletChoice === 'MetaMask'}
-                      onSelect={() => selectWallet('MetaMask')}
-                    />
-                    <WalletOption
-                      label="Coinbase Wallet"
-                      value="Coinbase Wallet"
-                      checked={walletChoice === 'Coinbase Wallet'}
-                      onSelect={() => selectWallet('Coinbase Wallet')}
-                    />
-
-                    {isProvider && !savedWallet && (
-                      <div className="flex items-center gap-3">
-                        <label htmlFor="net" className="text-caption text-text-secondary">
-                          Rede
-                        </label>
-                        <select
-                          id="net"
-                          value={network}
-                          onChange={(e) => setNetwork(e.target.value)}
-                          className="rounded-md border border-border-soft bg-ink px-3 py-1.5 text-body text-text-primary"
-                        >
-                          {WALLET_NETWORKS.map((n) => (
-                            <option key={n} value={n}>
-                              {n}
-                            </option>
-                          ))}
-                        </select>
-                        {connected ? (
-                          <span className="flex items-center gap-2 text-caption text-text-accent">
-                            Conectada
-                            <button
-                              type="button"
-                              onClick={() => setConnected(false)}
-                              className="underline"
-                            >
-                              desconectar
-                            </button>
-                          </span>
-                        ) : (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={connectProvider}
-                          >
-                            Conectar carteira
-                          </Button>
-                        )}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-body text-text-primary">{it.nft.name}</p>
+                        <p className="text-caption text-text-secondary">
+                          ID do token: {it.nft.name.match(/#\d+/)?.[0] ?? it.nft.id}
+                        </p>
                       </div>
-                    )}
-                    {connectError && (
-                      <p role="alert" className="text-caption text-red-400">
-                        {connectError}
+                      <span className="shrink-0 text-caption text-text-secondary">(x{it.qty})</span>
+                      <span className="shrink-0 text-body font-bold text-text-accent">
+                        {formatEth(it.lineTotalEth)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+
+                {couponOpen ? (
+                  <div className="flex flex-col gap-2">
+                    <div className="flex gap-2">
+                      <label htmlFor="coupon" className="sr-only">
+                        Código promocional
+                      </label>
+                      <input
+                        id="coupon"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value)}
+                        placeholder="Digite o código promocional"
+                        className="min-w-0 flex-1 rounded-md border border-border-soft bg-ink px-3 py-2 text-caption text-text-primary placeholder:text-text-secondary/60 focus:border-primary focus:outline-none"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => couponCode.trim() && cart.applyCoupon(couponCode.trim())}
+                      >
+                        Aplicar
+                      </Button>
+                    </div>
+                    {quote.coupon?.applied && (
+                      <p role="status" className="text-caption text-text-accent">
+                        Cupom {quote.coupon.code} aplicado (-{quote.coupon.percentOff}%).{' '}
+                        <button type="button" onClick={cart.removeCoupon} className="underline">
+                          remover
+                        </button>
                       </p>
                     )}
-                  </fieldset>
-
-                  {staleNotice && (
-                    <p role="alert" className="text-caption text-text-accent">
-                      Os valores foram atualizados. Revise e confirme novamente.
-                    </p>
-                  )}
-                  {formError && (
-                    <p role="alert" className="text-caption text-red-400">
-                      {formError}
-                    </p>
-                  )}
-
-                  <Button
+                    {quote.coupon && !quote.coupon.applied && (
+                      <p role="status" className="text-caption text-red-400">
+                        Cupom {quote.coupon.reason === 'expired' ? 'expirado' : 'inválido'}.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <button
                     type="button"
-                    disabled={empty || submit.isPending}
-                    onClick={confirm}
-                    className="w-full uppercase tracking-wide"
-                    data-testid="confirm-order"
+                    onClick={() => setCouponOpen(true)}
+                    className="text-center text-caption text-text-accent hover:underline"
                   >
-                    {submit.isPending ? 'Processando…' : 'Confirmar compra'}
-                  </Button>
-                </>
-              )}
-            </aside>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    </>
+                    Tem um código promocional? Aplique aqui
+                  </button>
+                )}
+
+                <dl className="flex flex-col gap-1.5 text-body">
+                  <Line label="Subtotal" value={formatEth(quote.subtotalEth)} />
+                  <Line
+                    label="Desconto do lançamento"
+                    value={
+                      Number(quote.discountEth) > 0
+                        ? `(-) ${formatEth(quote.discountEth)}`
+                        : '(-) 00.00'
+                    }
+                    accent={Number(quote.discountEth) > 0}
+                  />
+                  <Line
+                    label="Taxa de rede"
+                    value={formatEth(quote.networkFeeEth)}
+                    hint="Taxa estimada"
+                  />
+                </dl>
+
+                <div className="flex items-center justify-between border-t border-border-soft pt-3">
+                  <span className="text-body-lg font-bold text-text-primary">Total</span>
+                  <span
+                    className="text-body-lg font-bold text-primary"
+                    data-testid="checkout-total"
+                  >
+                    {formatEth(quote.totalEth)}
+                  </span>
+                </div>
+
+                <fieldset className="flex flex-col gap-3">
+                  <legend className="mb-1 w-full text-center text-body-lg text-text-primary">
+                    Carteira e rede
+                  </legend>
+
+                  <WalletOption
+                    label="WalletConnect"
+                    value="WalletConnect"
+                    checked={walletChoice === 'WalletConnect'}
+                    onSelect={() => selectWallet('WalletConnect')}
+                    badges
+                  />
+                  {(wallets ?? []).map((w) => (
+                    <WalletOption
+                      key={w.id}
+                      label={`${w.label} · ${w.network}`}
+                      value={w.label}
+                      checked={walletChoice === w.label}
+                      onSelect={() => selectWallet(w.label)}
+                    />
+                  ))}
+                  <WalletOption
+                    label="MetaMask"
+                    value="MetaMask"
+                    checked={walletChoice === 'MetaMask'}
+                    onSelect={() => selectWallet('MetaMask')}
+                  />
+                  <WalletOption
+                    label="Coinbase Wallet"
+                    value="Coinbase Wallet"
+                    checked={walletChoice === 'Coinbase Wallet'}
+                    onSelect={() => selectWallet('Coinbase Wallet')}
+                  />
+
+                  {isProvider && !savedWallet && (
+                    <div className="flex items-center gap-3">
+                      <label htmlFor="net" className="text-caption text-text-secondary">
+                        Rede
+                      </label>
+                      <select
+                        id="net"
+                        value={network}
+                        onChange={(e) => setNetwork(e.target.value)}
+                        className="rounded-md border border-border-soft bg-ink px-3 py-1.5 text-body text-text-primary"
+                      >
+                        {WALLET_NETWORKS.map((n) => (
+                          <option key={n} value={n}>
+                            {n}
+                          </option>
+                        ))}
+                      </select>
+                      {connected ? (
+                        <span className="flex items-center gap-2 text-caption text-text-accent">
+                          Conectada
+                          <button
+                            type="button"
+                            onClick={() => setConnected(false)}
+                            className="underline"
+                          >
+                            desconectar
+                          </button>
+                        </span>
+                      ) : (
+                        <Button type="button" variant="outline" size="sm" onClick={connectProvider}>
+                          Conectar carteira
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                  {connectError && (
+                    <p role="alert" className="text-caption text-red-400">
+                      {connectError}
+                    </p>
+                  )}
+                </fieldset>
+
+                {staleNotice && (
+                  <p role="alert" className="text-caption text-text-accent">
+                    Os valores foram atualizados. Revise e confirme novamente.
+                  </p>
+                )}
+                {formError && (
+                  <p role="alert" className="text-caption text-red-400">
+                    {formError}
+                  </p>
+                )}
+
+                <Button
+                  type="button"
+                  disabled={empty || submit.isPending}
+                  onClick={confirm}
+                  className="w-full uppercase tracking-wide"
+                  data-testid="confirm-order"
+                >
+                  {submit.isPending ? 'Processando…' : 'Confirmar compra'}
+                </Button>
+              </>
+            )}
+          </aside>
+        </div>
+      </main>
+      <Footer />
+    </div>
   )
 }
 

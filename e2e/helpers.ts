@@ -19,8 +19,10 @@ export async function login(
   password = SEED_USER.password,
 ): Promise<void> {
   await page.goto('/login')
-  await page.getByLabel('E-mail').fill(email)
-  await page.getByLabel('Senha').fill(password)
+  // Locators por `name` (não por label): o botão de mostrar/ocultar senha
+  // tem aria-label "Mostrar/Ocultar senha", que colide com getByLabel('Senha').
+  await page.locator('input[name="email"]').fill(email)
+  await page.locator('input[name="password"]').fill(password)
   await page.getByTestId('auth-submit').click()
   // Login bem-sucedido navega para fora de /login…
   await page.waitForURL((url) => !url.pathname.startsWith('/login'), { timeout: 15_000 })

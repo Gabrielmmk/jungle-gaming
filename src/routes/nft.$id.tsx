@@ -154,11 +154,7 @@ function NftDetailPage() {
 
           {heroImage && (
             <div className="overflow-hidden rounded-2xl bg-surface-dark">
-              <img
-                src={heroImage}
-                alt={nft.name}
-                className="aspect-[4/3.5] w-full object-cover"
-              />
+              <img src={heroImage} alt={nft.name} className="aspect-[4/3.5] w-full object-cover" />
             </div>
           )}
 
@@ -279,9 +275,7 @@ function NftDetailPage() {
 
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-soft pb-4">
               <div className="flex items-center gap-3">
-                <p className="text-heading font-bold text-text-accent">
-                  {formatEth(nft.priceEth)}
-                </p>
+                <p className="text-heading font-bold text-text-accent">{formatEth(nft.priceEth)}</p>
                 {updatedMessage && <UpdatedBadge message={updatedMessage} />}
               </div>
               <div className="flex items-center gap-1 text-caption text-text-secondary">
@@ -355,17 +349,27 @@ function NftDetailPage() {
             <div className="flex flex-col gap-1 text-caption text-text-secondary">
               <span>ID do token: {nft.name.match(/#\d+/)?.[0] ?? nft.id}</span>
               <span>Coleção: {nft.collection}</span>
-              <span>Atributos: {nft.category}, {nft.network}, {nft.format}</span>
+              <span>
+                Atributos: {nft.category}, {nft.network}, {nft.format}
+              </span>
             </div>
 
             <div className="flex items-center gap-3 text-caption text-text-secondary">
               <span className="font-bold text-text-primary">Compartilhar este NFT:</span>
               <div className="flex items-center gap-3">
-                <span aria-label="LinkedIn" title="LinkedIn" className="text-caption font-semibold text-text-primary">
+                <span
+                  aria-label="LinkedIn"
+                  title="LinkedIn"
+                  className="text-caption font-semibold text-text-primary"
+                >
                   in
                 </span>
                 <Mail aria-label="E-mail" className="size-4 text-text-primary" />
-                <span aria-label="Twitter" title="Twitter" className="text-caption font-semibold text-text-primary">
+                <span
+                  aria-label="Twitter"
+                  title="Twitter"
+                  className="text-caption font-semibold text-text-primary"
+                >
                   X
                 </span>
               </div>
