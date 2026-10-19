@@ -9,7 +9,7 @@ const NAV = [
   { to: '/profile', label: 'Dados do perfil', icon: User, enabled: true },
   { to: '/wallets', label: 'Carteiras', icon: Wallet, enabled: true },
   { to: null, label: 'Atividade', icon: Activity, enabled: false },
-  { to: null, label: 'Lista de interesses', icon: Heart, enabled: false },
+  { to: null, label: 'Lista de interesse', icon: Heart, enabled: false },
   { to: null, label: 'Ofertas', icon: Tag, enabled: false },
   { to: null, label: 'Arquivos baixados', icon: Download, enabled: false },
   { to: null, label: 'Suporte', icon: LifeBuoy, enabled: false },
@@ -39,14 +39,14 @@ export function AccountLayout({ children }: { children: ReactNode }): ReactNode 
                 {item.enabled && item.to ? (
                   <Link
                     to={item.to}
-                    className="flex items-center gap-2 rounded-md px-3 py-2 text-body text-text-secondary hover:bg-surface-card hover:text-text-primary [&.active]:bg-surface-card [&.active]:text-primary"
+                    className="flex items-center gap-2 border-l-2 border-transparent px-3 py-2 text-body text-text-secondary hover:text-text-primary [&.active]:border-primary [&.active]:text-primary"
                     activeProps={{ className: 'active' }}
                   >
                     <item.icon className="h-4 w-4" aria-hidden /> {item.label}
                   </Link>
                 ) : (
                   <span
-                    className="flex cursor-not-allowed items-center gap-2 rounded-md px-3 py-2 text-body text-text-secondary/50"
+                    className="flex cursor-not-allowed items-center gap-2 border-l-2 border-transparent px-3 py-2 text-body text-text-secondary/50"
                     title="Em breve"
                   >
                     <item.icon className="h-4 w-4" aria-hidden /> {item.label}
@@ -54,11 +54,11 @@ export function AccountLayout({ children }: { children: ReactNode }): ReactNode 
                 )}
               </li>
             ))}
-            <li>
+            <li className="mt-2 border-t border-border-soft pt-2">
               <button
                 type="button"
                 onClick={onLogout}
-                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-body text-text-secondary hover:bg-surface-card hover:text-text-primary"
+                className="flex w-full items-center gap-2 border-l-2 border-transparent px-3 py-2 text-left text-body text-primary hover:text-text-accent"
               >
                 <LogOut className="h-4 w-4" aria-hidden /> Sair
               </button>

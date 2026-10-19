@@ -25,7 +25,14 @@ export async function login(
   // Login bem-sucedido navega para fora de /login…
   await page.waitForURL((url) => !url.pathname.startsWith('/login'), { timeout: 15_000 })
   // …e o header (banner) passa a mostrar o nome do usuário (link p/ /profile).
-  await expect(page.getByRole('banner').getByRole('link', { name: SEED_USER.name })).toBeVisible()
+  // Exceção: a Início no mobile não tem o header padrão (ver `MobileTopBar`/
+  // `MobileBottomNav`) — lá a sessão é confirmada pelo ícone "Minha conta".
+  const banner = page.getByRole('banner')
+  if (await banner.count()) {
+    await expect(banner.getByRole('link', { name: SEED_USER.name })).toBeVisible()
+  } else {
+    await expect(page.getByRole('link', { name: 'Minha conta' })).toBeVisible()
+  }
 }
 
 /** Adiciona o primeiro NFT disponível ao carrinho e retorna para /cart. */

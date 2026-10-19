@@ -4,7 +4,6 @@ import { requireAuth } from '@/features/auth/guard'
 import { useSession } from '@/features/auth/useSession'
 import { AccountLayout } from '@/features/account/AccountLayout'
 import { ProfileForm } from '@/features/account/ProfileForm'
-import { PasswordForm } from '@/features/account/PasswordForm'
 
 export const Route = createRoute({
   getParentRoute: () => rootRoute,
@@ -15,14 +14,5 @@ export const Route = createRoute({
 
 function ProfilePage() {
   const { user } = useSession()
-  return (
-    <AccountLayout>
-      {user && (
-        <div className="flex flex-col gap-10">
-          <ProfileForm user={user} />
-          <PasswordForm />
-        </div>
-      )}
-    </AccountLayout>
-  )
+  return <AccountLayout>{user && <ProfileForm user={user} />}</AccountLayout>
 }

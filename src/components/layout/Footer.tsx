@@ -30,7 +30,7 @@ const SOCIALS = [
 
 interface FooterColumn {
   title: string
-  links: Array<{ label: string; to?: '/' | '/profile' }>
+  links: Array<{ label: string; to?: '/mercado' | '/profile' }>
 }
 
 const COLUMNS: FooterColumn[] = [
@@ -57,11 +57,11 @@ const COLUMNS: FooterColumn[] = [
   {
     title: 'Coleções',
     links: [
-      { label: 'Arte digital', to: '/' },
-      { label: 'Fotografia', to: '/' },
-      { label: 'Música', to: '/' },
-      { label: 'Arte 3D', to: '/' },
-      { label: 'Utilidade', to: '/' },
+      { label: 'Arte digital', to: '/mercado' },
+      { label: 'Fotografia', to: '/mercado' },
+      { label: 'Música', to: '/mercado' },
+      { label: 'Arte 3D', to: '/mercado' },
+      { label: 'Utilidade', to: '/mercado' },
     ],
   },
 ]
@@ -163,7 +163,7 @@ export function Footer() {
                 key={s.label}
                 aria-label={s.label}
                 title={s.label}
-                className="flex h-9 w-9 items-center justify-center rounded-md border border-border-soft text-caption font-semibold text-primary"
+                className="flex h-9 w-9 items-center justify-center rounded-md border border-primary text-caption font-semibold text-primary"
               >
                 {s.glyph}
               </span>

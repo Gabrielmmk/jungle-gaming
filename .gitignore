@@ -28,3 +28,6 @@ dist-ssr
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Process docs (brainstorm/spec/plan) — not part of the deliverable
+docs/superpowers/

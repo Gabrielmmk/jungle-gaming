@@ -18,14 +18,20 @@ export function AuthDialog({
   open,
   onOpenChange,
   defaultMode = 'login',
-  description = 'Entre ou crie sua conta para continuar.',
+  description,
 }: AuthDialogProps): ReactNode {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md border-none bg-transparent p-0 shadow-none">
         <DialogTitle className="sr-only">Autenticação</DialogTitle>
-        <DialogDescription className="sr-only">{description}</DialogDescription>
-        <AuthForm defaultMode={defaultMode} onSuccess={() => onOpenChange(false)} />
+        <DialogDescription className="sr-only">
+          {description ?? 'Entre ou crie sua conta para continuar.'}
+        </DialogDescription>
+        <AuthForm
+          defaultMode={defaultMode}
+          onSuccess={() => onOpenChange(false)}
+          description={description}
+        />
       </DialogContent>
     </Dialog>
   )

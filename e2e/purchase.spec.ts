@@ -20,7 +20,8 @@ test.describe('Compra', () => {
     await page.getByTestId('confirm-order').click()
 
     await expect(page).toHaveURL(/\/order\//)
-    await expect(page.getByRole('heading', { name: 'Obrigado!' })).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('dialog')).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByText('Seus NFTs agora estão na sua carteira.')).toBeVisible()
     await expect(page.getByText(/transferida para sua carteira/i)).toBeVisible()
   })
 

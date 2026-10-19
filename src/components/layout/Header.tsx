@@ -1,9 +1,14 @@
 import { useState, type ReactNode } from 'react'
-import { Link } from '@tanstack/react-router'
+import { Link, useLocation } from '@tanstack/react-router'
 import { LogIn, Search, ShoppingCart, UserRound, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/features/auth/useSession'
 import { useCartCount } from '@/features/cart/useCartCount'
+import { AuthDialog } from '@/features/auth/AuthDialog'
+
+const NAV_LINK_CLASSNAME =
+  'border-b-2 border-transparent pb-2.5 text-body-lg text-text-primary hover:text-text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary'
+const NAV_LINK_ACTIVE_CLASSNAME = 'border-primary font-bold text-text-accent'
 
 interface HeaderProps {
   /**
@@ -40,6 +45,13 @@ export function Header({ search }: HeaderProps) {
   const { isAuthenticated, user } = useSession()
   const cartCount = useCartCount()
   const [searchOpen, setSearchOpen] = useState(false)
+  const [authOpen, setAuthOpen] = useState(false)
+  // A navegação de um NFT (`/nft/$id`) não é descendente de `/mercado` na
+  // árvore de rotas, então o `activeProps` padrão do Router (baseado em
+  // prefixo de rota) nunca marcaria "Mercado" como ativo lá — mesmo o
+  // produto pertencendo à seção Mercado. Resolvido à mão pelo pathname.
+  const pathname = useLocation({ select: (location) => location.pathname })
+  const isMercadoSection = pathname === '/mercado' || pathname.startsWith('/nft/')
 
   return (
     <header className="border-b border-border bg-ink">
@@ -59,14 +71,13 @@ export function Header({ search }: HeaderProps) {
         >
           <Link
             to="/"
-            className="border-b-2 border-transparent pb-2.5 text-body-lg text-text-primary hover:text-text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            activeProps={{ className: 'border-primary font-bold text-text-accent' }}
+            className={`${NAV_LINK_CLASSNAME} ${pathname === '/' ? NAV_LINK_ACTIVE_CLASSNAME : ''}`}
           >
             Início
           </Link>
           <Link
-            to="/"
-            className="border-b-2 border-transparent pb-2.5 text-body-lg text-text-primary hover:text-text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            to="/mercado"
+            className={`${NAV_LINK_CLASSNAME} ${isMercadoSection ? NAV_LINK_ACTIVE_CLASSNAME : ''}`}
           >
             Mercado
           </Link>
@@ -126,16 +137,22 @@ export function Header({ search }: HeaderProps) {
                 <span className="max-w-[10ch] truncate">{user?.displayName ?? 'Minha conta'}</span>
               </Link>
             ) : (
-              <Button asChild variant="default" size="sm" className="rounded-lg">
-                <Link to="/login">
-                  <LogIn aria-hidden="true" className="size-4" />
-                  Entrar
-                </Link>
+              <Button
+                type="button"
+                variant="default"
+                size="sm"
+                className="rounded-lg"
+                onClick={() => setAuthOpen(true)}
+              >
+                <LogIn aria-hidden="true" className="size-4" />
+                Entrar
               </Button>
             )}
           </div>
         </div>
       </div>
+
+      <AuthDialog open={authOpen} onOpenChange={setAuthOpen} />
     </header>
   )
 }

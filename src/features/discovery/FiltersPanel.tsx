@@ -9,13 +9,22 @@ import type { Facets } from '@/contracts/nft'
 
 interface FiltersPanelProps {
   facets: Facets
+  /**
+   * Controle externo do drawer mobile (ex.: botão de filtro na
+   * `MobileTopBar` da Início) + oculta o próprio gatilho "Filtros" para
+   * não duplicar o acesso ao mesmo Sheet. Sem essas props, o componente
+   * gerencia seu próprio estado (comportamento padrão em Mercado/etc.).
+   */
+  mobileOpen?: boolean
+  onMobileOpenChange?: (open: boolean) => void
+  hideMobileTrigger?: boolean
 }
 
 /**
  * Corpo dos filtros (compartilhado entre a versão fixa no desktop e o
  * drawer mobile), para não duplicar o JSX das três seções.
  */
-function FiltersBody({ facets }: FiltersPanelProps) {
+function FiltersBody({ facets }: { facets: Facets }) {
   return (
     <div className="flex flex-col gap-8">
       <CategoryFilter counts={facets.categories} />
@@ -30,8 +39,15 @@ function FiltersBody({ facets }: FiltersPanelProps) {
  * fixa lateral; no mobile fica dentro de um `Sheet` (drawer) com
  * focus trap (herdado do Radix Dialog) e um botão "Filtros" que o abre.
  */
-export function FiltersPanel({ facets }: FiltersPanelProps) {
-  const [open, setOpen] = useState(false)
+export function FiltersPanel({
+  facets,
+  mobileOpen,
+  onMobileOpenChange,
+  hideMobileTrigger = false,
+}: FiltersPanelProps) {
+  const [internalOpen, setInternalOpen] = useState(false)
+  const open = mobileOpen ?? internalOpen
+  const setOpen = onMobileOpenChange ?? setInternalOpen
 
   return (
     <>
@@ -44,12 +60,14 @@ export function FiltersPanel({ facets }: FiltersPanelProps) {
 
       <div className="md:hidden">
         <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="sm" data-testid="filters-trigger">
-              <SlidersHorizontal className="size-4" />
-              Filtros
-            </Button>
-          </SheetTrigger>
+          {!hideMobileTrigger && (
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm" data-testid="filters-trigger">
+                <SlidersHorizontal className="size-4" />
+                Filtros
+              </Button>
+            </SheetTrigger>
+          )}
           <SheetContent>
             <SheetHeader>
               <SheetTitle>Filtros</SheetTitle>

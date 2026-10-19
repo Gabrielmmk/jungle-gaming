@@ -4,8 +4,12 @@ import { gotoHome } from './helpers'
 test.describe('Descoberta', () => {
   test('busca compõe a URL e sobrevive a refresh e histórico', async ({ page }) => {
     await gotoHome(page)
-    // A busca no header é um ícone que expande o campo.
-    await page.getByRole('button', { name: 'Abrir busca' }).click()
+    // Desktop: a busca no header é um ícone que expande o campo. Mobile
+    // (Início): a busca já fica visível na barra superior, sem toggle.
+    const openSearch = page.getByRole('button', { name: 'Abrir busca' })
+    if (await openSearch.count()) {
+      await openSearch.click()
+    }
     await page.getByTestId('search-input').fill('ape')
     await expect(page).toHaveURL(/q=ape/)
 

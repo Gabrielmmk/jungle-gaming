@@ -1,4 +1,4 @@
-import { useNavigate, useSearch } from '@tanstack/react-router'
+import { useLocation, useNavigate, useSearch } from '@tanstack/react-router'
 import { z } from 'zod'
 
 /**
@@ -59,16 +59,24 @@ export function nextSearch(current: NftSearch, patch: Partial<NftSearch>): NftSe
 
 /**
  * Hook de conveniência que liga o estado de busca puro (acima) à URL da
- * rota `/`, via TanStack Router. `search` é a busca validada atual;
- * `setSearch(patch)` aplica `nextSearch` e navega, substituindo os search
- * params (o Router cuida da serialização, inclusive de arrays).
+ * rota ativa, via TanStack Router. O catálogo (`Discovery`) é usado tanto
+ * em `/` (Início) quanto em `/mercado`, ambas com o mesmo `validateSearch`
+ * (`nftSearchSchema`) — por isso o `from` é resolvido dinamicamente a
+ * partir do pathname atual, em vez de fixo numa das duas rotas.
+ *
+ * `search` é a busca validada atual; `setSearch(patch)` aplica
+ * `nextSearch` e navega, substituindo os search params (o Router cuida da
+ * serialização, inclusive de arrays).
  */
 export function useNftSearch(): {
   search: NftSearch
   setSearch: (patch: Partial<NftSearch>) => void
 } {
-  const search = useSearch({ from: '/' })
-  const navigate = useNavigate({ from: '/' })
+  const pathname = useLocation({ select: (location) => location.pathname })
+  const from = pathname === '/mercado' ? '/mercado' : '/'
+
+  const search = useSearch({ from })
+  const navigate = useNavigate({ from })
 
   const setSearch = (patch: Partial<NftSearch>): void => {
     const next = nextSearch(search, patch)

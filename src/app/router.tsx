@@ -2,6 +2,7 @@ import { createRouter } from '@tanstack/react-router'
 import { queryClient } from '@/shared/query/queryClient'
 import { Route as rootRoute } from '@/routes/__root'
 import { Route as indexRoute } from '@/routes/index'
+import { Route as mercadoRoute } from '@/routes/mercado'
 import { Route as nftDetailRoute } from '@/routes/nft.$id'
 import { Route as loginRoute } from '@/routes/login'
 import { Route as registerRoute } from '@/routes/register'
@@ -19,6 +20,7 @@ import { Route as orderRoute } from '@/routes/order.$id'
  */
 const routeTree = rootRoute.addChildren([
   indexRoute,
+  mercadoRoute,
   nftDetailRoute,
   loginRoute,
   registerRoute,

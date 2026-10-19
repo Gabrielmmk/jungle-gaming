@@ -1,4 +1,4 @@
-import { createRoute, useNavigate } from '@tanstack/react-router'
+import { createRoute, Link, useNavigate } from '@tanstack/react-router'
 import { z } from 'zod'
 import { Route as rootRoute } from '@/routes/__root'
 import { Header } from '@/components/layout/Header'
@@ -17,13 +17,44 @@ export const Route = createRoute({
 function RegisterPage() {
   const navigate = useNavigate()
   const { redirect } = Route.useSearch()
+  const onSuccess = () => navigate({ to: redirect ?? '/' })
+
   return (
-    <div className="flex min-h-screen flex-col bg-ink">
-      <Header />
-      <main className="flex flex-1 items-center justify-center px-6 py-16">
-        <AuthForm defaultMode="register" onSuccess={() => navigate({ to: redirect ?? '/' })} />
-      </main>
-      <Footer />
-    </div>
+    <>
+      {/* Tela cheia dedicada no mobile: wordmark + formulário, sem o chrome
+          padrão do site (ver mesmo padrão em /nft/$id para a versão mobile). */}
+      <div className="flex min-h-screen flex-col items-center bg-ink px-6 pb-12 pt-14 md:hidden">
+        <p className="text-[28px] font-bold tracking-[0.15em] text-text-primary">KURIO</p>
+        <div className="mt-16 w-full max-w-md">
+          <AuthForm
+            defaultMode="register"
+            variant="page"
+            title="Criar perfil de colecionador"
+            submitLabel="Criar perfil"
+            onSuccess={onSuccess}
+            footer={
+              <p className="text-body text-text-secondary">
+                Já tem uma conta?{' '}
+                <Link
+                  to="/login"
+                  search={{ redirect }}
+                  className="text-text-accent hover:underline"
+                >
+                  Entre
+                </Link>
+              </p>
+            }
+          />
+        </div>
+      </div>
+
+      <div className="hidden min-h-screen flex-col bg-ink md:flex">
+        <Header />
+        <main className="flex flex-1 items-center justify-center px-6 py-16">
+          <AuthForm defaultMode="register" onSuccess={onSuccess} />
+        </main>
+        <Footer />
+      </div>
+    </>
   )
 }

@@ -25,7 +25,18 @@ import { useNfts } from '@/features/discovery/useNfts'
  *   continuam visíveis (via `keepPreviousData` em `useNfts`) com uma
  *   barra de progresso fina no topo + `aria-busy`, sem escondê-los.
  */
-export function Discovery() {
+interface DiscoveryProps {
+  mobileCard?: boolean
+  /** Controle externo do Sheet de filtros mobile — ver `FiltersPanel`. */
+  mobileFiltersOpen?: boolean
+  onMobileFiltersOpenChange?: (open: boolean) => void
+}
+
+export function Discovery({
+  mobileCard = false,
+  mobileFiltersOpen,
+  onMobileFiltersOpenChange,
+}: DiscoveryProps = {}) {
   const { search, setSearch } = useNftSearch()
   const { items, total, facets, pageSize, isLoading, isError, isFetching, refetch } =
     useNfts(search)
@@ -46,7 +57,7 @@ export function Discovery() {
   return (
     <section
       id={CATALOG_ANCHOR_ID}
-      className="relative mx-auto max-w-7xl px-6 py-12"
+      className={`relative mx-auto max-w-7xl py-12 ${mobileCard ? 'px-4 pt-6 sm:px-6 sm:py-12' : 'px-6'}`}
       aria-busy={isBackgroundUpdating}
     >
       {isBackgroundUpdating && (
@@ -60,7 +71,12 @@ export function Discovery() {
 
       <div className="flex flex-col gap-8 md:flex-row">
         <div className="flex flex-col gap-6 md:w-64 md:shrink-0">
-          <FiltersPanel facets={facets} />
+          <FiltersPanel
+            facets={facets}
+            mobileOpen={mobileFiltersOpen}
+            onMobileOpenChange={onMobileFiltersOpenChange}
+            hideMobileTrigger={mobileCard}
+          />
           <FeaturedNft />
         </div>
 
@@ -70,11 +86,11 @@ export function Discovery() {
             <div
               role="tablist"
               aria-label="Filtro rápido do catálogo"
-              className="flex items-center gap-5 text-body"
+              className="flex items-center gap-3 text-caption sm:gap-5 sm:text-body"
             >
               {(
                 [
-                  { label: 'Todas as NFTs', sort: undefined },
+                  { label: 'Todos os NFTs', sort: undefined },
                   { label: 'Novos lançamentos', sort: 'recent' as const },
                   { label: 'Em alta', sort: 'price_desc' as const },
                 ] as const
@@ -87,7 +103,7 @@ export function Discovery() {
                     aria-selected={active}
                     type="button"
                     onClick={() => setSearch({ sort: tab.sort })}
-                    className={`border-b-2 pb-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                    className={`whitespace-nowrap border-b-2 pb-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                       active
                         ? 'border-primary text-text-primary'
                         : 'border-transparent text-text-secondary hover:text-text-primary'
@@ -98,14 +114,16 @@ export function Discovery() {
                 )
               })}
             </div>
-            <div className="flex items-center gap-2">
+            <div className={`items-center gap-2 ${mobileCard ? 'hidden sm:flex' : 'flex'}`}>
               <span className="whitespace-nowrap text-caption text-text-secondary">
                 Ordenar por:
               </span>
               <SortSelect />
             </div>
           </div>
-          <p className="mb-4 text-caption text-text-secondary">
+          <p
+            className={`mb-4 text-caption text-text-secondary ${mobileCard ? 'hidden sm:block' : ''}`}
+          >
             {isLoading ? 'Carregando...' : `${total} ${total === 1 ? 'resultado' : 'resultados'}`}
           </p>
 
@@ -114,7 +132,7 @@ export function Discovery() {
           ) : !isLoading && total === 0 ? (
             <EmptyState actionLabel="Limpar filtros" onAction={clearFilters} />
           ) : (
-            <NftGrid items={items} isLoading={isLoading} />
+            <NftGrid items={items} isLoading={isLoading} mobileCard={mobileCard} />
           )}
 
           {!isError && !isLoading && total > 0 && (

@@ -2,6 +2,8 @@ import { useState, type ReactNode } from 'react'
 import { ZodError } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Field } from '@/components/form/Field'
+import { GoogleIcon } from '@/components/icons/GoogleIcon'
+import { FacebookIcon } from '@/components/icons/FacebookIcon'
 import { loginSchema, registerSchema } from '@/contracts/auth'
 import { useAuthMutations } from '@/features/auth/useAuthMutations'
 import { parseApiError } from '@/features/auth/apiError'
@@ -11,6 +13,15 @@ type Mode = 'login' | 'register'
 interface AuthFormProps {
   defaultMode?: Mode
   onSuccess?: () => void
+  description?: string
+  /** `dialog` (padrão): abas Entrar/Criar conta clicáveis, usado no modal. `page`: título fixo do modo corrente, usado nas rotas de tela cheia (sem alternância local — a troca de modo é feita navegando para a outra rota). */
+  variant?: 'dialog' | 'page'
+  /** Título customizado para o variant `page` (ex.: "Criar perfil de colecionador"). */
+  title?: string
+  /** Rótulo customizado do botão de submit (ex.: "Criar perfil"). */
+  submitLabel?: string
+  /** Conteúdo extra ao final do card (ex.: link "Já tem uma conta? Entre"). */
+  footer?: ReactNode
 }
 
 const zodFieldErrors = (error: ZodError): Record<string, string> => {
@@ -28,10 +39,28 @@ const zodFieldErrors = (error: ZodError): Record<string, string> => {
  * associados aos campos. Social e "Esqueceu a senha?" são coerentes sem
  * falso sucesso (integrações reais fora de escopo).
  */
-export function AuthForm({ defaultMode = 'login', onSuccess }: AuthFormProps): ReactNode {
+const DEFAULT_DESCRIPTION: Record<Mode, string> = {
+  login: 'Entre para gerenciar sua carteira, coleção e perfil de criador.',
+  register: 'Crie seu perfil de colecionador e conecte uma carteira quando quiser.',
+}
+
+export function AuthForm({
+  defaultMode = 'login',
+  onSuccess,
+  description,
+  variant = 'dialog',
+  title,
+  submitLabel,
+  footer,
+}: AuthFormProps): ReactNode {
   const [mode, setMode] = useState<Mode>(defaultMode)
   const { login, register } = useAuthMutations()
-  const [form, setForm] = useState({ email: '', password: '', displayName: '', username: '' })
+  const [form, setForm] = useState({
+    email: '',
+    password: '',
+    confirmPassword: '',
+    username: '',
+  })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [generalError, setGeneralError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
@@ -56,10 +85,14 @@ export function AuthForm({ defaultMode = 'login', onSuccess }: AuthFormProps): R
         const input = loginSchema.parse({ email: form.email, password: form.password })
         await login.mutateAsync(input)
       } else {
+        if (form.confirmPassword !== form.password) {
+          setErrors({ confirmPassword: 'As senhas não coincidem' })
+          return
+        }
         const input = registerSchema.parse({
           email: form.email,
           password: form.password,
-          displayName: form.displayName,
+          displayName: form.username,
           username: form.username,
         })
         await register.mutateAsync(input)
@@ -77,25 +110,71 @@ export function AuthForm({ defaultMode = 'login', onSuccess }: AuthFormProps): R
   }
 
   return (
-    <div className="w-full max-w-md rounded-lg border border-border bg-surface-card p-6 font-mono">
-      <div className="mb-5 flex gap-2" role="tablist" aria-label="Autenticação">
-        {(['login', 'register'] as const).map((m) => (
+    <div
+      className={
+        variant === 'page'
+          ? 'w-full max-w-md font-mono'
+          : 'w-full max-w-md rounded-lg bg-ink p-8 font-mono'
+      }
+    >
+      {variant === 'dialog' ? (
+        <h2
+          role="tablist"
+          aria-label="Autenticação"
+          className="flex items-center justify-center gap-3 text-center text-[28px] font-bold leading-none"
+        >
           <button
-            key={m}
             role="tab"
-            aria-selected={mode === m}
+            aria-selected={mode === 'login'}
             type="button"
-            onClick={() => switchMode(m)}
-            className={`rounded-md px-3 py-1.5 text-body transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-              mode === m ? 'bg-primary text-ink' : 'text-text-secondary hover:text-text-primary'
+            onClick={() => switchMode('login')}
+            className={`transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+              mode === 'login' ? 'text-text-accent' : 'text-text-primary'
             }`}
           >
-            {m === 'login' ? 'Entrar' : 'Criar conta'}
+            Entrar
           </button>
-        ))}
-      </div>
+          <span aria-hidden="true" className="font-normal text-border-soft">
+            |
+          </span>
+          <button
+            role="tab"
+            aria-selected={mode === 'register'}
+            type="button"
+            onClick={() => switchMode('register')}
+            className={`transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+              mode === 'register' ? 'text-text-accent' : 'text-text-primary'
+            }`}
+          >
+            Criar conta
+          </button>
+        </h2>
+      ) : (
+        <h1 className="text-center text-[20px] font-bold leading-tight text-text-primary">
+          {title ?? (mode === 'login' ? 'Entrar' : 'Criar conta')}
+        </h1>
+      )}
 
-      <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
+      {variant === 'dialog' && (
+        <p className="mx-auto mt-4 max-w-xs text-center text-body text-text-primary">
+          {description ?? DEFAULT_DESCRIPTION[mode]}
+        </p>
+      )}
+
+      <form onSubmit={submit} className="mt-7 flex flex-col gap-4" noValidate>
+        {mode === 'register' && (
+          <Field
+            label="Nome de usuário"
+            name="username"
+            value={form.username}
+            onChange={set('username')}
+            error={errors.username}
+            required
+            autoComplete="username"
+            placeholder="Nome de usuário"
+            hideLabel
+          />
+        )}
         <Field
           label="E-mail"
           name="email"
@@ -105,28 +184,9 @@ export function AuthForm({ defaultMode = 'login', onSuccess }: AuthFormProps): R
           error={errors.email}
           required
           autoComplete="email"
+          placeholder={mode === 'login' ? 'contato@email.com' : 'Digite seu e-mail'}
+          hideLabel
         />
-        {mode === 'register' && (
-          <>
-            <Field
-              label="Nome de exibição"
-              name="displayName"
-              value={form.displayName}
-              onChange={set('displayName')}
-              error={errors.displayName}
-              required
-            />
-            <Field
-              label="Nome de usuário"
-              name="username"
-              value={form.username}
-              onChange={set('username')}
-              error={errors.username}
-              required
-              autoComplete="username"
-            />
-          </>
-        )}
         <Field
           label="Senha"
           name="password"
@@ -136,7 +196,24 @@ export function AuthForm({ defaultMode = 'login', onSuccess }: AuthFormProps): R
           error={errors.password}
           required
           autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+          placeholder="Senha"
+          hideLabel
         />
+        {mode === 'register' && (
+          <Field
+            label="Confirmar senha"
+            name="confirmPassword"
+            type="password"
+            value={form.confirmPassword}
+            onChange={set('confirmPassword')}
+            error={errors.confirmPassword}
+            required
+            autoComplete="new-password"
+            placeholder="Confirmar senha"
+            hideLabel
+            allowReveal={false}
+          />
+        )}
 
         {generalError && (
           <p role="alert" className="text-caption text-red-400">
@@ -153,32 +230,48 @@ export function AuthForm({ defaultMode = 'login', onSuccess }: AuthFormProps): R
           <button
             type="button"
             onClick={() => setNotice('Recuperação de senha indisponível nesta demonstração.')}
-            className="self-start text-caption text-text-accent hover:underline"
+            className="self-end text-body text-text-accent hover:underline"
           >
             Esqueceu a senha?
           </button>
         )}
 
-        <Button type="submit" disabled={pending} data-testid="auth-submit">
-          {pending ? 'Enviando…' : mode === 'login' ? 'Entrar' : 'Criar conta'}
+        <Button
+          type="submit"
+          disabled={pending}
+          data-testid="auth-submit"
+          className="h-auto rounded-lg py-3.5 text-body-lg font-bold"
+        >
+          {pending ? 'Enviando…' : (submitLabel ?? (mode === 'login' ? 'Entrar' : 'Criar conta'))}
         </Button>
       </form>
 
-      <div className="mt-5">
-        <p className="mb-3 text-center text-caption text-text-secondary">Ou continue com</p>
-        <div className="flex gap-3">
-          {['Google', 'Facebook'].map((provider) => (
-            <button
-              key={provider}
-              type="button"
-              onClick={() => setNotice(`Login com ${provider} indisponível nesta demonstração.`)}
-              className="flex-1 rounded-md border border-border-soft bg-ink px-3 py-2 text-caption text-text-secondary hover:text-text-primary"
-            >
-              {provider}
-            </button>
-          ))}
+      <div className="mt-7 flex flex-col gap-4">
+        <div className="flex items-center gap-3">
+          <span aria-hidden="true" className="h-px flex-1 bg-border-soft" />
+          <p className="text-body text-text-primary">Ou continue com</p>
+          <span aria-hidden="true" className="h-px flex-1 bg-border-soft" />
         </div>
+
+        <button
+          type="button"
+          onClick={() => setNotice('Login com Google indisponível nesta demonstração.')}
+          className="flex items-center justify-center gap-3 rounded-lg border border-border-soft bg-ink px-3 py-3 text-body text-text-secondary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <GoogleIcon className="size-5" />
+          Continuar com Google
+        </button>
+        <button
+          type="button"
+          onClick={() => setNotice('Login com Facebook indisponível nesta demonstração.')}
+          className="flex items-center justify-center gap-3 rounded-lg border border-border-soft bg-ink px-3 py-3 text-body text-text-secondary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <FacebookIcon className="size-5" />
+          Continuar com Facebook
+        </button>
       </div>
+
+      {footer && <div className="mt-7 text-center">{footer}</div>}
     </div>
   )
 }

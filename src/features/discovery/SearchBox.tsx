@@ -15,7 +15,7 @@ const DEBOUNCE_MS = 300
  * guardando o último valor externo visto em `useState` em vez de
  * `useRef` — o lint do projeto proíbe mutar refs durante a renderização).
  */
-export function SearchBox() {
+export function SearchBox({ placeholder = 'Buscar NFTs, coleções...' }: { placeholder?: string } = {}) {
   const { search, setSearch } = useNftSearch()
   const externalQ = search.q ?? ''
 
@@ -53,7 +53,7 @@ export function SearchBox() {
         data-testid="search-input"
         value={value}
         onChange={(e) => handleChange(e.target.value)}
-        placeholder="Buscar NFTs, coleções..."
+        placeholder={placeholder}
         className="w-full rounded-md border border-border-soft bg-surface-card py-2 pl-9 pr-3 text-body text-text-primary placeholder:text-text-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-ink"
       />
     </form>
